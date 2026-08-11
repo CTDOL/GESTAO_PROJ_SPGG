@@ -95,3 +95,18 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 5mm;
+  }
+  
+  body {
+    background-color: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

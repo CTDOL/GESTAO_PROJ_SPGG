@@ -210,19 +210,21 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white print:bg-white print:text-black">
       {/* Top Navbar with Project Selector */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        projects={projects}
-        activeProjectId={activeProjectId}
-        onSelectProject={setActiveProjectId}
-        onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
-      />
+      <div className="print:hidden">
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          projects={projects}
+          activeProjectId={activeProjectId}
+          onSelectProject={setActiveProjectId}
+          onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
+        />
+      </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 print:pt-0 print:px-0">
         {activeTab === 'portfolio' && (
           <PortfolioDashboardView
             projects={projects}
@@ -302,7 +304,7 @@ export function App() {
       <PWAInstallPrompt />
 
       {/* Footer */}
-      <footer className="bg-slate-900/80 border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+      <footer className="bg-slate-900/80 border-t border-slate-800/80 py-4 text-center text-xs text-slate-500 print:hidden">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div>
             <span className="font-bold text-slate-400">ProjTrack PWA</span> • Gestão de Portfólio & Controle de Projetos (Canvas v5)
