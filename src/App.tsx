@@ -45,26 +45,37 @@ export function App() {
   const [projects, setProjects] = useState<Project[]>([defaultProject]);
   const [activeProjectId, setActiveProjectId] = useState<string>(defaultProject.id);
 
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+
   useEffect(() => {
     fetch('/api.php')
       .then((res) => {
-        if (!res.ok) throw new Error('API não disponível');
+        if (!res.ok) throw new Error('API unreachable');
         return res.json();
       })
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+      .then((data: Project[]) => {
+        if (data && data.length > 0) {
           setProjects(data);
           setActiveProjectId(data[0].id);
-        } else {
-          loadLocalFallback();
         }
+        setIsDataLoaded(true); // Sucesso ao ler do servidor (mesmo que venha vazio e use o default)
       })
       .catch((err) => {
-        console.log('Backend indisponível (normal em dev local), usando localStorage:', err);
-        loadLocalFallback();
+        console.warn('Using local data/defaults:', err);
+        // Não seta isDataLoaded como true. Isso impede que o POST abaixo sobrescreva o banco com o projeto default
       })
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (isLoading || !isDataLoaded) return;
+    
+    fetch('/api.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(projects),
+    }).catch((err) => console.error('Failed to sync to VPS:', err));
+  }, [projects, isLoading, isDataLoaded]);
 
   const loadLocalFallback = () => {
     const saved = localStorage.getItem('projtrack_db');
