@@ -37,6 +37,16 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemTag, setNewItemTag] = useState('');
+  const [printMode, setPrintMode] = useState<'single' | 'poster'>('single');
+
+  const handlePrint = (mode: 'single' | 'poster') => {
+    setPrintMode(mode);
+    setTimeout(() => {
+      window.print();
+      // Reseta para single depois que fechar a janela de print (opcional)
+      setTimeout(() => setPrintMode('single'), 1000);
+    }, 100);
+  };
 
   const handleAddItem = (blockKey: keyof PMBOKCanvasData) => {
     if (!newItemTitle.trim()) return;
@@ -219,24 +229,9 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
     </div>
   );
 
-  return (
-    <div className="pb-12 print:p-0 print:m-0">
-      
-      {/* Botão de impressão (Invisível na impressão) */}
-      <div className="print:hidden mb-4 flex justify-end">
-        <button 
-          onClick={() => window.print()}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shadow-lg transition flex items-center gap-2 cursor-pointer"
-        >
-          🖨️ Imprimir (A4 Horizontal)
-        </button>
-      </div>
-
-      {/* 
-        GRID MESTRE DO CANVAS 
-        Usa gap-px com fundo para gerar as bordas finas (estilo tabela)
-      */}
-      <div className="bg-slate-700 print:bg-black p-px flex flex-col gap-px shadow-2xl print:shadow-none print:w-[297mm] print:h-[200mm] print:overflow-hidden rounded-lg print:rounded-none mx-auto">
+  const renderMainGrid = (isPoster: boolean = false) => (
+      {/* GRID MESTRE DO CANVAS */}
+      <div className={`bg-slate-700 print:bg-black p-px flex flex-col gap-px shadow-2xl print:shadow-none print:w-[297mm] print:overflow-hidden rounded-lg print:rounded-none mx-auto ${isPoster ? 'print:h-[210mm]' : 'print:h-[195mm]'}`}>
         
         {/* CABEÇALHO DO PROJETO */}
         <div className="bg-slate-900 print:bg-gray-100 flex p-3 justify-between items-center">
@@ -254,7 +249,7 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
             </p>
           </div>
 
-          {onDeleteProject && (
+          {onDeleteProject && !isPoster && (
             <div className="ml-4 print:hidden">
               <button onClick={() => setIsDeleteConfirmOpen(true)} className="p-2 rounded bg-rose-950/50 text-rose-400 hover:bg-rose-900 hover:text-white transition">
                 <Trash2 className="h-4 w-4" />
@@ -265,39 +260,33 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
 
         {/* CORPO DO CANVAS (5 Colunas) */}
         <div className="grid grid-cols-5 gap-px flex-1">
-          
           {/* COLUNA 1 */}
           <div className="flex flex-col gap-px">
             {renderBlockCard('OBJETIVO', 'objetivo', Target)}
             {renderBlockCard('JUSTIFICATIVA', 'justificativa', MessageSquare)}
             {renderBlockCard('BENEFÍCIOS', 'beneficios', Star)}
           </div>
-
           {/* COLUNA 2 */}
           <div className="flex flex-col gap-px">
             {renderBlockCard('CARACTERÍSTICAS', 'produto', FileText)}
             {renderBlockCard('ESCOPO', 'escopo', CheckSquare)}
             {renderBlockCard('NÃO ESCOPO', 'naoEscopo', XSquare)}
           </div>
-
           {/* COLUNA 3 */}
           <div className="flex flex-col gap-px">
             {renderBlockCard('STAKEHOLDERS', 'stakeholders', Users)}
             {renderEntregas()}
           </div>
-
           {/* COLUNA 4 */}
           <div className="flex flex-col gap-px">
             {renderBlockCard('PREMISSAS & RESTRIÇÕES', 'restricoes', Lock)}
             {renderDatas()}
           </div>
-
           {/* COLUNA 5 */}
           <div className="flex flex-col gap-px">
             {renderBlockCard('RISCOS', 'riscos', AlertTriangle)}
             {renderInvestimento()}
           </div>
-
         </div>
 
         {/* RODAPÉ DO CANVAS */}
@@ -307,6 +296,61 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
         </div>
 
       </div>
+  );
+
+  return (
+    <div className="pb-12 print:p-0 print:m-0">
+      
+      {/* Botões de impressão (Invisíveis na impressão) */}
+      <div className="print:hidden mb-4 flex justify-end gap-3">
+        <button 
+          onClick={() => handlePrint('single')}
+          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer border border-slate-700"
+        >
+          🖨️ Imprimir (A4 Único)
+        </button>
+        <button 
+          onClick={() => handlePrint('poster')}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shadow-lg transition flex items-center gap-2 cursor-pointer"
+        >
+          🧩 Imprimir Pôster (4x A4)
+        </button>
+      </div>
+
+      {/* Renderização condicional para a Tela e Modo Single */}
+      <div className={printMode === 'poster' ? 'print:hidden' : ''}>
+        {renderMainGrid(false)}
+      </div>
+
+      {/* Renderização condicional para o Modo Poster (Só aparece na impressão e se mode=poster) */}
+      {printMode === 'poster' && (
+        <div className="hidden print:block">
+          {/* Página 1: Topo-Esquerdo */}
+          <div className="w-[297mm] h-[210mm] overflow-hidden relative" style={{ pageBreakAfter: 'always' }}>
+            <div style={{ transform: 'scale(2)', transformOrigin: 'top left', position: 'absolute', top: 0, left: 0 }}>
+              {renderMainGrid(true)}
+            </div>
+          </div>
+          {/* Página 2: Topo-Direito */}
+          <div className="w-[297mm] h-[210mm] overflow-hidden relative" style={{ pageBreakAfter: 'always' }}>
+            <div style={{ transform: 'scale(2)', transformOrigin: 'top left', position: 'absolute', top: 0, left: '-297mm' }}>
+              {renderMainGrid(true)}
+            </div>
+          </div>
+          {/* Página 3: Base-Esquerda */}
+          <div className="w-[297mm] h-[210mm] overflow-hidden relative" style={{ pageBreakAfter: 'always' }}>
+            <div style={{ transform: 'scale(2)', transformOrigin: 'top left', position: 'absolute', top: '-210mm', left: 0 }}>
+              {renderMainGrid(true)}
+            </div>
+          </div>
+          {/* Página 4: Base-Direita */}
+          <div className="w-[297mm] h-[210mm] overflow-hidden relative" style={{ pageBreakAfter: 'avoid' }}>
+            <div style={{ transform: 'scale(2)', transformOrigin: 'top left', position: 'absolute', top: '-210mm', left: '-297mm' }}>
+              {renderMainGrid(true)}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL ADICIONAR ITEM */}
       {activeModalBlock && (
