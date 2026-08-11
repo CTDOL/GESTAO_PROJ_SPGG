@@ -14,16 +14,16 @@ interface ReportsViewProps {
 export const ReportsView: React.FC<ReportsViewProps> = ({ canvasData, tasks, timesheet }) => {
   const reportRef = useRef<HTMLDivElement>(null);
 
-  const totalInvestment = canvasData.planoAcao.reduce((acc, curr) => acc + curr.investment, 0);
-  const totalHoursSpent = tasks.reduce((acc, curr) => acc + curr.hoursSpent, 0);
+  const totalInvestment = (canvasData.planoAcao || []).reduce((acc, curr) => acc + curr.investment, 0);
+  const totalHoursSpent = (tasks || []).reduce((acc, curr) => acc + curr.hoursSpent, 0);
   const overallProgress = Math.round(
-    canvasData.planoAcao.reduce((acc, curr) => acc + curr.progress, 0) / canvasData.planoAcao.length
+    (canvasData.planoAcao || []).reduce((acc, curr) => acc + curr.progress, 0) / ((canvasData.planoAcao || []).length || 1)
   );
 
   // Export to Excel / XLSX
   const exportToExcel = () => {
     // Worksheet 1: Plano de Ação & Entregas
-    const deliveriesData = canvasData.planoAcao.map(d => ({
+    const deliveriesData = (canvasData.planoAcao || []).map(d => ({
       Ordem: d.order,
       Entrega: d.name,
       Prazo: d.month,
@@ -33,7 +33,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ canvasData, tasks, tim
     }));
 
     // Worksheet 2: Tarefas
-    const tasksData = tasks.map(t => ({
+    const tasksData = (tasks || []).map(t => ({
       ID: t.id,
       Título: t.title,
       Status: t.status,
@@ -46,7 +46,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ canvasData, tasks, tim
     }));
 
     // Worksheet 3: Timesheet
-    const timesheetData = timesheet.map(ts => ({
+    const timesheetData = (timesheet || []).map(ts => ({
       Data: ts.date,
       Member: ts.member,
       Role: ts.role,
@@ -208,7 +208,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ canvasData, tasks, tim
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {canvasData.planoAcao.map(item => (
+              {(canvasData.planoAcao || []).map(item => (
                 <tr key={item.id}>
                   <td className="py-2.5 px-3 font-bold text-indigo-400">{item.order}</td>
                   <td className="py-2.5 px-3 font-medium text-slate-200">{item.name}</td>
@@ -237,7 +237,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ canvasData, tasks, tim
           <div>
             <h3 className="text-sm font-bold text-white mb-2">2. Matriz de Stakeholders & Envolvidos</h3>
             <ul className="space-y-1.5 text-xs text-slate-300">
-              {canvasData.stakeholders.map(s => (
+              {(canvasData.stakeholders || []).map(s => (
                 <li key={s.id} className="p-2 rounded bg-slate-950 border border-slate-800">
                   <span className="font-bold text-indigo-300">{s.title}:</span> {s.description}
                 </li>
@@ -248,7 +248,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ canvasData, tasks, tim
           <div>
             <h3 className="text-sm font-bold text-white mb-2">3. Restrições & Conformidade LGPD</h3>
             <ul className="space-y-1.5 text-xs text-slate-300">
-              {canvasData.restricoes.map(r => (
+              {(canvasData.restricoes || []).map(r => (
                 <li key={r.id} className="p-2 rounded bg-slate-950 border border-slate-800">
                   <span className="font-bold text-amber-300">{r.title}:</span> {r.description}
                 </li>

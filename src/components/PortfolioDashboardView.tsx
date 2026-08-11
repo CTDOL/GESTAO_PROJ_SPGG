@@ -45,7 +45,7 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
 
   const averageProgress = Math.round(
     projects.reduce((acc, curr) => {
-      const pAvg = curr.canvasData.planoAcao.reduce((a, c) => a + c.progress, 0) / curr.canvasData.planoAcao.length;
+      const pAvg = curr.canvasData.planoAcao.reduce((a, c) => a + c.progress, 0) / (curr.canvasData.planoAcao.length || 1);
       return acc + pAvg;
     }, 0) / (totalProjects || 1)
   );
@@ -197,7 +197,7 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project) => {
             const projProgress = Math.round(
-              project.canvasData.planoAcao.reduce((a, c) => a + c.progress, 0) / project.canvasData.planoAcao.length
+              project.canvasData.planoAcao.reduce((a, c) => a + c.progress, 0) / (project.canvasData.planoAcao.length || 1)
             );
 
             const projSpent = project.canvasData.planoAcao.reduce((a, c) => a + (c.investment * (c.progress / 100)), 0);
