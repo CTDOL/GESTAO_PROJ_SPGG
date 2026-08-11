@@ -22,6 +22,7 @@ import { Project, PMBOKCanvasData, Task, DeliveryItem, TimesheetEntry, ProjectFi
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('portfolio');
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState<boolean>(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Initial Project: ProjTrack (PROJ-001)
@@ -128,6 +129,10 @@ export function App() {
     setActiveTab('canvas');
   };
 
+  const handleEditProject = (updatedProject: Project) => {
+    setProjects((prev) => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+  };
+
   const handleDeleteProject = (projectId: string) => {
     setProjects((prevProjects) => {
       const updatedProjects = prevProjects.filter((p) => p.id !== projectId);
@@ -231,6 +236,7 @@ export function App() {
           activeProjectId={activeProjectId}
           onSelectProject={setActiveProjectId}
           onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
+          onOpenEditProjectModal={() => setIsEditModalOpen(true)}
         />
       </div>
 
@@ -245,6 +251,7 @@ export function App() {
             setActiveTab={setActiveTab}
           />
         )}
+        {/* Render rest of the tabs... */}
 
         {activeTab === 'canvas' && (
           <PMBOKCanvasView
@@ -274,6 +281,8 @@ export function App() {
           <GanttView
             deliveries={activeProject.canvasData.planoAcao}
             setDeliveries={setDeliveries}
+            budget={activeProject.budget}
+            durationMonths={activeProject.durationMonths}
           />
         )}
 
@@ -303,13 +312,25 @@ export function App() {
         )}
       </main>
 
-      {/* New Project Registration Modal */}
-      <NewProjectModal
-        isOpen={isNewProjectModalOpen}
-        onClose={() => setIsNewProjectModalOpen(false)}
-        onAddProject={handleAddProject}
-        existingProjectsCount={projects.length}
-      />
+      {isNewProjectModalOpen && (
+        <NewProjectModal
+          isOpen={isNewProjectModalOpen}
+          onClose={() => setIsNewProjectModalOpen(false)}
+          onAddProject={handleAddProject}
+          existingProjectsCount={projects.length}
+        />
+      )}
+
+      {isEditModalOpen && (
+        <NewProjectModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onAddProject={handleAddProject}
+          onEditProject={handleEditProject}
+          projectToEdit={activeProject}
+          existingProjectsCount={projects.length}
+        />
+      )}
 
       {/* PWA Prompt Banner */}
       <PWAInstallPrompt />

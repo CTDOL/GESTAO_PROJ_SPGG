@@ -6,16 +6,21 @@ interface NewProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddProject: (newProject: Project) => void;
+  onEditProject?: (updatedProject: Project) => void;
   existingProjectsCount?: number;
+  projectToEdit?: Project;
 }
 
 export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   isOpen,
   onClose,
   onAddProject,
+  onEditProject,
   existingProjectsCount = 1,
+  projectToEdit,
 }) => {
-  const autoCode = `PROJ-00${existingProjectsCount + 1}`;
+  const isEditing = !!projectToEdit;
+  const autoCode = isEditing ? projectToEdit.code : `PROJ-00${existingProjectsCount + 1}`;
 
   // Canvas de Projeto v5 Form Fields
   const [code, setCode] = useState(autoCode);
@@ -34,175 +39,135 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
   const [budget, setBudget] = useState<number>(120000);
   const [durationMonths, setDurationMonths] = useState<number>(6);
 
+  React.useEffect(() => {
+    if (isOpen) {
+      if (isEditing && projectToEdit) {
+        setCode(projectToEdit.code);
+        setName(projectToEdit.name);
+        setProposito(projectToEdit.canvasData.proposito[0]?.description || '');
+        setObjetivo(projectToEdit.canvasData.objetivo[0]?.description || '');
+        setJustificativa(projectToEdit.canvasData.justificativa[0]?.description || '');
+        setBeneficios(projectToEdit.canvasData.beneficios[0]?.description || '');
+        setProduto(projectToEdit.canvasData.produto[0]?.description || '');
+        setEscopo(projectToEdit.canvasData.escopo[0]?.description || '');
+        setNaoEscopo(projectToEdit.canvasData.naoEscopo[0]?.description || '');
+        setStakeholders(projectToEdit.canvasData.stakeholders[0]?.description || '');
+        setResistentes(projectToEdit.canvasData.resistentes[0]?.description || '');
+        setPremissasRestricoes(projectToEdit.canvasData.premissas[0]?.description || '');
+        setRiscos(projectToEdit.canvasData.riscos[0]?.description || '');
+        setBudget(projectToEdit.budget);
+        setDurationMonths(projectToEdit.durationMonths);
+      } else {
+        setCode(`PROJ-00${existingProjectsCount + 1}`);
+        setName('');
+        setProposito('');
+        setObjetivo('');
+        setJustificativa('');
+        setBeneficios('');
+        setProduto('');
+        setEscopo('');
+        setNaoEscopo('');
+        setStakeholders('Patrocinador: Diretoria Executiva | Cliente: PMO');
+        setResistentes('Usuários operacionais apegados a planilhas antigas');
+        setPremissasRestricoes('Equipe TI 100% dedicada | Conformidade LGPD obrigatória');
+        setRiscos('Resistência inicial de adoção e atrasos em integrações');
+        setBudget(120000);
+        setDurationMonths(6);
+      }
+    }
+  }, [isOpen, isEditing, projectToEdit, existingProjectsCount]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const projectId = `proj-${Date.now()}`;
     const projectCode = code.trim().toUpperCase() || autoCode;
     const monthlyBudget = Math.round(budget / 5);
 
-    // Build default 5 action plan deliverables for Canvas v5 (Entregas, Datas, Investimento)
-    const defaultDeliveries: DeliveryItem[] = [
-      {
-        id: `del-1-${projectId}`,
-        order: 1,
-        name: 'Requisitos mapeados e documentados',
-        month: 'Mês 1',
-        monthNumber: 1,
-        investment: Math.round(monthlyBudget * 0.5),
-        completed: false,
-        progress: 0,
-        status: 'Planejado'
-      },
-      {
-        id: `del-2-${projectId}`,
-        order: 2,
-        name: 'Protótipos de interface (UX/UI) aprovados',
-        month: 'Mês 2',
-        monthNumber: 2,
-        investment: Math.round(monthlyBudget * 0.8),
-        completed: false,
-        progress: 0,
-        status: 'Planejado'
-      },
-      {
-        id: `del-3-${projectId}`,
-        order: 3,
-        name: 'Módulos de gestão e tarefas desenvolvidos',
-        month: `Mês ${Math.round(durationMonths * 0.6)}`,
-        monthNumber: 4,
-        investment: Math.round(monthlyBudget * 2),
-        completed: false,
-        progress: 0,
-        status: 'Planejado'
-      },
-      {
-        id: `del-4-${projectId}`,
-        order: 4,
-        name: 'Relatórios e integrações finalizados',
-        month: `Mês ${Math.round(durationMonths * 0.8)}`,
-        monthNumber: 5,
-        investment: Math.round(monthlyBudget * 1.2),
-        completed: false,
-        progress: 0,
-        status: 'Planejado'
-      },
-      {
-        id: `del-5-${projectId}`,
-        order: 5,
-        name: 'Sistema homologado e equipe treinada',
-        month: `Mês ${durationMonths}`,
-        monthNumber: 6,
-        investment: Math.round(monthlyBudget * 0.5),
-        completed: false,
-        progress: 0,
-        status: 'Planejado'
-      }
-    ];
+    if (isEditing && projectToEdit && onEditProject) {
+      // EDITA O PROJETO EXISTENTE
+      const updatedCanvasData = {
+        ...projectToEdit.canvasData,
+        nomeProjeto: name,
+        codigoProjeto: projectCode,
+        proposito: [{ ...projectToEdit.canvasData.proposito[0], description: proposito }],
+        objetivo: [{ ...projectToEdit.canvasData.objetivo[0], description: objetivo }],
+        justificativa: [{ ...projectToEdit.canvasData.justificativa[0], description: justificativa }],
+        produto: [{ ...projectToEdit.canvasData.produto[0], description: produto }],
+        escopo: [{ ...projectToEdit.canvasData.escopo[0], description: escopo }],
+        naoEscopo: [{ ...projectToEdit.canvasData.naoEscopo[0], description: naoEscopo }],
+        beneficios: [{ ...projectToEdit.canvasData.beneficios[0], description: beneficios }],
+        stakeholders: [{ ...projectToEdit.canvasData.stakeholders[0], description: stakeholders }],
+        resistentes: [{ ...projectToEdit.canvasData.resistentes[0], description: resistentes }],
+        premissas: [{ ...projectToEdit.canvasData.premissas[0], description: premissasRestricoes }],
+        restricoes: [{ ...projectToEdit.canvasData.restricoes[0], description: `Orçamento de R$ ${budget.toLocaleString('pt-BR')} e conformidade LGPD.` }],
+        riscos: [{ ...projectToEdit.canvasData.riscos[0], description: riscos }],
+        // Não altera o plano de ação (Entregas e investimentos), pois o usuário pode já ter alterado no Gantt.
+        // Se a pessoa quiser alterar investimentos, ela usa a tela Gantt.
+      };
 
-    const newCanvasData: PMBOKCanvasData = {
-      nomeProjeto: name,
-      codigoProjeto: projectCode,
-      proposito: [
-        {
-          id: `prop-${projectId}`,
-          title: 'Objetivo Estratégico',
-          description: proposito || 'Aumentar a taxa de sucesso nas entregas garantindo padronização e controle.',
-          tag: 'Estratégico'
-        }
-      ],
-      objetivo: [
-        {
-          id: `obj-${projectId}`,
-          title: 'Objetivo do Projeto',
-          description: objetivo || 'Desenvolver e implantar a plataforma web centralizada.',
-          tag: 'Entregável'
-        }
-      ],
-      justificativa: [
-        {
-          id: `just-${projectId}`,
-          title: 'Problema a Resolver',
-          description: justificativa || 'Eliminar controle descentralizado em planilhas e e-mails e atrasos nas entregas.',
-          tag: 'Problema'
-        }
-      ],
-      produto: [
-        {
-          id: `prod-${projectId}`,
-          title: 'Plataforma Web Responsiva',
-          description: produto || 'Sistema 100% web com dashboards, Kanban, Timesheet e relatórios PDF/Excel.',
-          tag: 'Características'
-        }
-      ],
-      stakeholders: [
-        { id: `stk-1-${projectId}`, title: 'Patrocinador & Cliente', description: stakeholders, tag: 'Stakeholder' }
-      ],
-      resistentes: [
-        { id: `res-1-${projectId}`, title: 'Resistentes à Mudança', description: resistentes, tag: 'Resistente' }
-      ],
-      premissas: [
-        { id: `prem-1-${projectId}`, title: 'Premissas & Restrições', description: premissasRestricoes, tag: 'Premissa' }
-      ],
-      restricoes: [
-        { id: `rest-1-${projectId}`, title: 'Teto & LGPD', description: `Orçamento de R$ ${budget.toLocaleString('pt-BR')} e conformidade LGPD.`, tag: 'Restrição' }
-      ],
-      riscos: [
-        { id: `risc-1-${projectId}`, title: 'Fatores de Risco', description: riscos, tag: 'Alto Impacto' }
-      ],
-      escopo: [
-        { id: `esc-1-${projectId}`, title: 'O que será feito', description: escopo || 'Requisitos, UX/UI, desenvolvimento fullstack, testes e treinamento.', tag: 'Escopo' }
-      ],
-      naoEscopo: [
-        { id: `nesc-1-${projectId}`, title: 'O que NÃO será feito', description: naoEscopo || 'App móvel nativo, folha de pagamento e integração com fornecedores.', tag: 'Exclusão' }
-      ],
-      beneficios: [
-        { id: `ben-1-${projectId}`, title: 'Ganhos Esperados', description: beneficios || 'Redução de 40% no tempo administrativo e visibilidade em tempo real.', tag: 'Ganho' }
-      ],
-      planoAcao: defaultDeliveries
-    };
+      const updatedProject = {
+        ...projectToEdit,
+        code: projectCode,
+        name,
+        description: proposito,
+        budget,
+        durationMonths,
+        canvasData: updatedCanvasData
+      };
+      
+      onEditProject(updatedProject);
+    } else {
+      // CRIA NOVO PROJETO
+      const projectId = `proj-${Date.now()}`;
+      const defaultDeliveries: DeliveryItem[] = [
+        { id: `del-1-${projectId}`, order: 1, name: 'Requisitos', month: 'Mês 1', monthNumber: 1, investment: Math.round(monthlyBudget * 0.5), completed: false, progress: 0, status: 'Planejado' },
+        { id: `del-2-${projectId}`, order: 2, name: 'UX/UI', month: 'Mês 2', monthNumber: 2, investment: Math.round(monthlyBudget * 0.8), completed: false, progress: 0, status: 'Planejado' },
+        { id: `del-3-${projectId}`, order: 3, name: 'Desenvolvimento', month: `Mês ${Math.round(durationMonths * 0.6)}`, monthNumber: 4, investment: Math.round(monthlyBudget * 2), completed: false, progress: 0, status: 'Planejado' },
+        { id: `del-4-${projectId}`, order: 4, name: 'Integrações', month: `Mês ${Math.round(durationMonths * 0.8)}`, monthNumber: 5, investment: Math.round(monthlyBudget * 1.2), completed: false, progress: 0, status: 'Planejado' },
+        { id: `del-5-${projectId}`, order: 5, name: 'Homologação', month: `Mês ${durationMonths}`, monthNumber: 6, investment: Math.round(monthlyBudget * 0.5), completed: false, progress: 0, status: 'Planejado' }
+      ];
 
-    const newProject: Project = {
-      id: projectId,
-      code: projectCode,
-      name,
-      description: proposito || 'Novo projeto cadastrado via Canvas de Projeto v5.',
-      budget,
-      durationMonths,
-      canvasData: newCanvasData,
-      tasks: [
-        {
-          id: `tsk-init-${projectId}`,
-          title: 'Reunião de Kick-off e Validação do Canvas de Projeto v5',
-          description: 'Alinhamento dos blocos do Canvas v5 com Patrocinadores e PMO.',
-          status: 'in_progress',
-          priority: 'alta',
-          assignee: 'Marcos Silva',
-          assigneeRole: 'Líder Técnico',
-          deliveryId: defaultDeliveries[0].id,
-          dueDate: '2026-09-15',
-          hoursSpent: 8,
-          estimatedHours: 16
-        }
-      ],
-      timesheet: [],
-      files: [],
-      discussions: [
-        {
-          id: `disc-init-${projectId}`,
-          author: 'Marcos Silva',
-          role: 'Líder Técnico',
-          text: `Projeto [${projectCode}] ${name} cadastrado com sucesso.`,
-          timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
-          avatarColor: 'bg-indigo-600'
-        }
-      ]
-    };
+      const newCanvasData: PMBOKCanvasData = {
+        nomeProjeto: name,
+        codigoProjeto: projectCode,
+        proposito: [{ id: `prop-${projectId}`, title: 'Objetivo Estratégico', description: proposito || 'Aumentar a taxa de sucesso nas entregas.', tag: 'Estratégico' }],
+        objetivo: [{ id: `obj-${projectId}`, title: 'Objetivo do Projeto', description: objetivo || 'Desenvolver a plataforma.', tag: 'Entregável' }],
+        justificativa: [{ id: `just-${projectId}`, title: 'Problema a Resolver', description: justificativa || 'Eliminar controle descentralizado.', tag: 'Problema' }],
+        produto: [{ id: `prod-${projectId}`, title: 'Produto', description: produto || 'Sistema 100% web.', tag: 'Características' }],
+        stakeholders: [{ id: `stk-1-${projectId}`, title: 'Patrocinador & Cliente', description: stakeholders, tag: 'Stakeholder' }],
+        resistentes: [{ id: `res-1-${projectId}`, title: 'Resistentes à Mudança', description: resistentes, tag: 'Resistente' }],
+        premissas: [{ id: `prem-1-${projectId}`, title: 'Premissas', description: premissasRestricoes, tag: 'Premissa' }],
+        restricoes: [{ id: `rest-1-${projectId}`, title: 'Teto & LGPD', description: `Orçamento de R$ ${budget.toLocaleString('pt-BR')} e conformidade LGPD.`, tag: 'Restrição' }],
+        riscos: [{ id: `risc-1-${projectId}`, title: 'Riscos', description: riscos, tag: 'Alto Impacto' }],
+        escopo: [{ id: `esc-1-${projectId}`, title: 'Escopo', description: escopo || 'Requisitos e dev.', tag: 'Escopo' }],
+        naoEscopo: [{ id: `nesc-1-${projectId}`, title: 'Não Escopo', description: naoEscopo || 'App nativo.', tag: 'Exclusão' }],
+        beneficios: [{ id: `ben-1-${projectId}`, title: 'Benefícios', description: beneficios || 'Redução de tempo.', tag: 'Ganho' }],
+        planoAcao: defaultDeliveries
+      };
 
-    onAddProject(newProject);
+      const newProject: Project = {
+        id: projectId,
+        code: projectCode,
+        name,
+        description: proposito || 'Novo projeto cadastrado.',
+        budget,
+        durationMonths,
+        canvasData: newCanvasData,
+        tasks: [
+          { id: `tsk-init-${projectId}`, title: 'Reunião de Kick-off', description: 'Alinhamento.', status: 'in_progress', priority: 'alta', assignee: 'Marcos Silva', assigneeRole: 'Líder Técnico', deliveryId: defaultDeliveries[0].id, dueDate: '2026-09-15', hoursSpent: 8, estimatedHours: 16 }
+        ],
+        timesheet: [],
+        files: [],
+        discussions: [
+          { id: `disc-init-${projectId}`, author: 'Sistema', role: 'Notificação', text: `Projeto [${projectCode}] ${name} cadastrado com sucesso.`, timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '), avatarColor: 'bg-indigo-600' }
+        ]
+      };
+      onAddProject(newProject);
+    }
+    
     onClose();
   };
 

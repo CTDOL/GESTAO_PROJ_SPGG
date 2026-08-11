@@ -5,9 +5,11 @@ import { Calendar, DollarSign, CheckCircle2, Clock, AlertCircle } from 'lucide-r
 interface GanttViewProps {
   deliveries: DeliveryItem[];
   setDeliveries: React.Dispatch<React.SetStateAction<DeliveryItem[]>>;
+  budget: number;
+  durationMonths: number;
 }
 
-export const GanttView: React.FC<GanttViewProps> = ({ deliveries, setDeliveries }) => {
+export const GanttView: React.FC<GanttViewProps> = ({ deliveries, setDeliveries, budget, durationMonths }) => {
   const months = ['Mês 1', 'Mês 2', 'Mês 3', 'Mês 4', 'Mês 5', 'Mês 6'];
 
   const handleProgressChange = (id: string, newProgress: number) => {
@@ -43,7 +45,7 @@ export const GanttView: React.FC<GanttViewProps> = ({ deliveries, setDeliveries 
             <span className="px-2 py-0.5 text-xs font-bold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">
               Cronograma Oficial
             </span>
-            <span className="text-xs text-slate-400">Ciclo de 6 Meses - Orçamento R$ 120.000</span>
+            <span className="text-xs text-slate-400">Ciclo de {durationMonths} Meses - Orçamento R$ {budget.toLocaleString('pt-BR')}</span>
           </div>
           <h1 className="text-xl font-extrabold text-white mt-1">Visão de Portfólio: Gantt & Milestones</h1>
           <p className="text-xs text-slate-400">
