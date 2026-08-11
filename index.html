@@ -28,10 +28,11 @@
     <!-- Register PWA Service Worker -->
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((reg) => console.log('[PWA] Service Worker Registrado com Sucesso:', reg.scope))
-            .catch((err) => console.error('[PWA] Erro ao registrar Service Worker:', err));
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('[PWA] Service Worker Desativado e Removido com Sucesso');
+          }
         });
       }
     </script>

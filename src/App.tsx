@@ -9,7 +9,6 @@ import { TimesheetView } from './components/TimesheetView';
 import { FilesCommView } from './components/FilesCommView';
 import { ReportsView } from './components/ReportsView';
 import { NewProjectModal } from './components/NewProjectModal';
-import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { 
   initialPMBOKData, 
   initialTasks, 
@@ -353,9 +352,6 @@ export function App() {
           existingProjectsCount={projects.length}
         />
       )}
-
-      {/* PWA Prompt Banner */}
-      <PWAInstallPrompt />
 
       {/* Footer */}
       <footer className="bg-slate-900/80 border-t border-slate-800/80 py-4 text-center text-xs text-slate-500 print:hidden">
