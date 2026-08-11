@@ -230,9 +230,7 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
   );
 
   const renderMainGrid = (isPoster: boolean = false) => (
-      {/* GRID MESTRE DO CANVAS */}
       <div className={`bg-slate-700 print:bg-black p-px flex flex-col gap-px shadow-2xl print:shadow-none print:w-[297mm] print:overflow-hidden rounded-lg print:rounded-none mx-auto ${isPoster ? 'print:h-[210mm]' : 'print:h-[195mm]'}`}>
-        
         {/* CABEÇALHO DO PROJETO */}
         <div className="bg-slate-900 print:bg-gray-100 flex p-3 justify-between items-center">
           <div className="flex-1">
