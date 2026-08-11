@@ -144,27 +144,7 @@ export function App() {
         if (updatedProjects.length > 0) {
           setActiveProjectId(updatedProjects[0].id);
         } else {
-          // If no projects remain, create a clean default template project
-          const templateCode = `PROJ-00${projects.length + 1}`;
-          const templateProject: Project = {
-            id: `proj-template-${Date.now()}`,
-            code: templateCode,
-            name: 'Novo Projeto Exemplo',
-            description: 'Projeto limpo recém-criado',
-            budget: 100000,
-            durationMonths: 6,
-            canvasData: {
-              ...initialPMBOKData,
-              nomeProjeto: 'Novo Projeto Exemplo',
-              codigoProjeto: templateCode,
-            },
-            tasks: [],
-            timesheet: [],
-            files: [],
-            discussions: [],
-          };
-          setActiveProjectId(templateProject.id);
-          return [templateProject];
+          setActiveProjectId('');
         }
       }
       return updatedProjects;
