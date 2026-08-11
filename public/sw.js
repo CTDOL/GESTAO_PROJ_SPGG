@@ -1,4 +1,4 @@
-const CACHE_NAME = 'projtrack-pwa-v1';
+const CACHE_NAME = 'projtrack-pwa-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -33,7 +33,8 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event (Stale-While-Revalidate Strategy)
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+  // Ignora requisições não-GET e chamadas de API
+  if (event.request.method !== 'GET' || event.request.url.includes('api.php')) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
