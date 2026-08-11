@@ -353,43 +353,69 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
             </div>
           </div>
 
-          {/* Colunas 3, 4, 5: Stakeholders, Premissas & Restrições, Riscos */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+          {/* Stakeholders e Resistentes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
             <div>
               <label className="block text-xs font-bold text-violet-300 mb-1">
-                Stakeholders & Resistentes
+                Stakeholders (Patrocinadores, Equipe)
               </label>
               <textarea
                 rows={2}
                 value={stakeholders}
                 onChange={(e) => setStakeholders(e.target.value)}
-                placeholder="Ex: Patrocinador (CEO), Cliente (PMO), Resistentes..."
+                placeholder="Ex: Patrocinador (CEO), Cliente (PMO)..."
                 className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
+            <div>
+              <label className="block text-xs font-bold text-pink-300 mb-1">
+                Resistentes
+              </label>
+              <textarea
+                rows={2}
+                value={resistentes}
+                onChange={(e) => setResistentes(e.target.value)}
+                placeholder="Ex: Usuários operacionais..."
+                className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
 
+          {/* Premissas, Restrições e Riscos */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
             <div>
               <label className="block text-xs font-bold text-amber-300 mb-1">
-                Premissas & Restrições
+                Premissas
               </label>
               <textarea
                 rows={2}
                 value={premissasRestricoes}
                 onChange={(e) => setPremissasRestricoes(e.target.value)}
-                placeholder="Ex: Dedicação exclusiva de TI, conformidade LGPD..."
+                placeholder="Ex: Dedicação exclusiva de TI..."
                 className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
-
+            <div>
+              <label className="block text-xs font-bold text-orange-300 mb-1">
+                Restrições
+              </label>
+              <textarea
+                rows={2}
+                placeholder="Restrições geradas automaticamente com base no Orçamento e Prazo"
+                disabled
+                className="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-700/50 rounded-lg text-xs text-slate-500 cursor-not-allowed"
+                value={`Orçamento de R$ ${budget.toLocaleString('pt-BR')} e conformidade LGPD.`}
+              />
+            </div>
             <div>
               <label className="block text-xs font-bold text-rose-300 mb-1">
-                Riscos (O que pode impactar?)
+                Riscos
               </label>
               <textarea
                 rows={2}
                 value={riscos}
                 onChange={(e) => setRiscos(e.target.value)}
-                placeholder="Ex: Baixa adoção inicial, escopo excedente..."
+                placeholder="Ex: Baixa adoção inicial, atrasos..."
                 className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
