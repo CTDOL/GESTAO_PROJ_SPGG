@@ -1,6 +1,6 @@
 # Guia do Desenvolvedor
 
-Este documento descreve como configurar, rodar e realizar o build do projeto ProjTrack em ambiente de desenvolvimento.
+Este documento descreve como configurar, rodar e realizar o build do projeto MATCH em ambiente de desenvolvimento.
 
 ## 🚀 Pré-requisitos
 

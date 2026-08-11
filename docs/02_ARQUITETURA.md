@@ -2,7 +2,7 @@
 
 ## 🛠️ Stack Tecnológico
 
-O ProjTrack foi desenvolvido como um MVP robusto utilizando tecnologias modernas do ecossistema front-end.
+O MATCH foi desenvolvido como um MVP robusto utilizando tecnologias modernas do ecossistema front-end.
 
 *   **Core:** React.js (com Functional Components e Hooks)
 *   **Linguagem:** TypeScript (tipagem estática para maior segurança e previsibilidade)

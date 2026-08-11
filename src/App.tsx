@@ -47,6 +47,23 @@ export function App() {
 
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
+  const loadLocalFallback = () => {
+    const saved = localStorage.getItem('projtrack_db');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProjects(parsed);
+          setActiveProjectId(parsed[0].id);
+          return true;
+        }
+      } catch (e) {
+        console.error('Erro ao ler localStorage', e);
+      }
+    }
+    return false;
+  };
+
   useEffect(() => {
     fetch('/api.php')
       .then((res) => {
@@ -64,7 +81,26 @@ export function App() {
         setIsDataLoaded(true);
       })
       .catch((err) => {
-        console.warn('API error, staying empty:', err);
+        console.warn('API error, loading local fallback ou test projects:', err);
+        const hasLocal = loadLocalFallback();
+        if (!hasLocal) {
+          // Gerar 4 projetos de teste
+          const testProjects: Project[] = Array.from({ length: 4 }).map((_, i) => ({
+            ...defaultProject,
+            id: `test-proj-${i + 1}`,
+            code: `PROJ-00${i + 1}`,
+            name: `${defaultProject.name} - Fase ${i + 1}`,
+            budget: defaultProject.budget + i * 10000,
+            canvasData: {
+              ...defaultProject.canvasData,
+              codigoProjeto: `PROJ-00${i + 1}`,
+              nomeProjeto: `${defaultProject.name} - Fase ${i + 1}`,
+            }
+          }));
+          setProjects(testProjects);
+          setActiveProjectId(testProjects[0].id);
+        }
+        setIsDataLoaded(true);
       })
       .finally(() => setIsLoading(false));
   }, []);
@@ -79,20 +115,6 @@ export function App() {
     }).catch((err) => console.error('Failed to sync to VPS:', err));
   }, [projects, isLoading, isDataLoaded]);
 
-  const loadLocalFallback = () => {
-    const saved = localStorage.getItem('projtrack_db');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setProjects(parsed);
-          setActiveProjectId(parsed[0].id);
-        }
-      } catch (e) {
-        console.error('Erro ao ler localStorage', e);
-      }
-    }
-  };
 
   useEffect(() => {
     if (isLoading) return;

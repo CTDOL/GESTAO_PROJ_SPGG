@@ -1,6 +1,6 @@
 # Funcionalidades Principais (Features)
 
-O ProjTrack MVP foi concebido para entregar uma experiência fluida através da segregação do gerenciamento do projeto em **Abas (Views)** específicas. 
+O MATCH MVP foi concebido para entregar uma experiência fluida através da segregação do gerenciamento do projeto em **Abas (Views)** específicas. 
 
 ## 1. Dashboard de Portfólio de Projetos
 *   **Visão Global:** KPIs de progresso médio geral e total de projetos cadastrados.

@@ -1,8 +1,8 @@
-# ProjTrack - Visão Geral do Sistema
+# MATCH - Visão Geral do Sistema
 
 ## 🎯 Propósito e Justificativa
 
-**Nome do Projeto:** ProjTrack (Sistema Integrado de Controle de Projetos)
+**Nome do Projeto:** MATCH (Sistema Integrado de Controle de Projetos)
 
 **Propósito (Objetivo Estratégico):** 
 Aumentar a taxa de sucesso nas entregas da empresa, garantindo visibilidade, padronização e controle de ponta a ponta em todos os projetos do portfólio.
@@ -15,7 +15,7 @@ Descentralização do controle de projetos em diversas planilhas e e-mails, o qu
 
 ## 📦 O Produto
 
-O ProjTrack é uma Plataforma 100% Web e responsiva (Progressive Web App - PWA), acessível via desktop e mobile. Ele centraliza o ciclo de vida do projeto através das seguintes ferramentas integradas:
+O MATCH é uma Plataforma 100% Web e responsiva (Progressive Web App - PWA), acessível via desktop e mobile. Ele centraliza o ciclo de vida do projeto através das seguintes ferramentas integradas:
 
 1. **Dashboard de Portfólio:** Visão consolidada de todos os projetos, orçamentos, progresso e status.
 2. **PMBOK Canvas v5:** Planejamento visual e estratégico do projeto em uma única tela.
