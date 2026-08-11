@@ -16,11 +16,21 @@ $db_file = __DIR__ . '/database.json';
 
 // Trata requisições GET (Carregar Dados)
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Ativa compressão GZIP se suportada pelo cliente
+    if (isset($_SERVER['HTTP_ACCEPT_ENCODING']) && strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false) {
+        ob_start("ob_gzhandler");
+    }
+
     if (file_exists($db_file)) {
         echo file_get_contents($db_file);
     } else {
         // Retorna um array vazio se o banco não existir ainda
         echo json_encode([]);
+    }
+
+    // Fecha o buffer e envia para o cliente compactado
+    if (ob_get_level() > 0) {
+        ob_end_flush();
     }
     exit;
 }
