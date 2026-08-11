@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { PortfolioDashboardView } from './components/PortfolioDashboardView';
 import { PMBOKCanvasView } from './components/PMBOKCanvasView';
@@ -22,6 +22,7 @@ import { Project, PMBOKCanvasData, Task, DeliveryItem, TimesheetEntry, ProjectFi
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('portfolio');
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Initial Project: ProjTrack (PROJ-001)
   const defaultProject: Project = {
@@ -43,6 +44,62 @@ export function App() {
 
   const [projects, setProjects] = useState<Project[]>([defaultProject]);
   const [activeProjectId, setActiveProjectId] = useState<string>(defaultProject.id);
+
+  useEffect(() => {
+    fetch('/api.php')
+      .then((res) => {
+        if (!res.ok) throw new Error('API não disponível');
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProjects(data);
+          setActiveProjectId(data[0].id);
+        } else {
+          loadLocalFallback();
+        }
+      })
+      .catch((err) => {
+        console.log('Backend indisponível (normal em dev local), usando localStorage:', err);
+        loadLocalFallback();
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const loadLocalFallback = () => {
+    const saved = localStorage.getItem('projtrack_db');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProjects(parsed);
+          setActiveProjectId(parsed[0].id);
+        }
+      } catch (e) {
+        console.error('Erro ao ler localStorage', e);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isLoading) return;
+    const saveTimer = setTimeout(() => {
+      const payload = JSON.stringify(projects);
+      
+      // Salva localmente por segurança
+      localStorage.setItem('projtrack_db', payload);
+
+      // Sincroniza com a API na VPS
+      fetch('/api.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      }).catch(err => console.log('Salvo apenas no localStorage (API offline):', err));
+      
+    }, 1000); // Debounce de 1 segundo
+
+    return () => clearTimeout(saveTimer);
+  }, [projects, isLoading]);
 
   // Active Project Data
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
@@ -143,6 +200,14 @@ export function App() {
       discussions: typeof action === 'function' ? action(prev.discussions) : action,
     }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
+        <div className="animate-pulse text-xl text-indigo-400">Carregando dados da VPS...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
