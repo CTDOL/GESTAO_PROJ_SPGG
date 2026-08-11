@@ -81,5 +81,6 @@ Sempre que uma nova *feature* for aprovada e ocorrer um `git push` para a branch
 ---
 
 <div align="center">
-  <p>Desenvolvido com 💜 por CTDOL.</p>
+  <p>Desenvolvido por <a href="https://ctdol.com.br/" target="_blank">CTDOL</a></p>
+  <p>Conheça mais sobre as nossas soluções em gestão corporativa acessando o nosso portal.</p>
 </div>
