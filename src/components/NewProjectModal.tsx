@@ -163,7 +163,8 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({
         files: [],
         discussions: [
           { id: `disc-init-${projectId}`, author: 'Sistema', role: 'Notificação', text: `Projeto [${projectCode}] ${name} cadastrado com sucesso.`, timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '), avatarColor: 'bg-indigo-600' }
-        ]
+        ],
+        status: 'Aguardando'
       };
       onAddProject(newProject);
     }

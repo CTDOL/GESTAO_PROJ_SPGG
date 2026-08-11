@@ -94,4 +94,5 @@ export interface Project {
   timesheet: TimesheetEntry[];
   files: ProjectFile[];
   discussions: DiscussionMessage[];
+  status?: 'Aguardando' | 'Iniciado';
 }

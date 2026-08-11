@@ -40,6 +40,7 @@ export function App() {
     timesheet: initialTimesheet,
     files: initialFiles,
     discussions: initialDiscussions,
+    status: 'Aguardando',
   };
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -57,7 +58,8 @@ export function App() {
       ...defaultProject.canvasData,
       codigoProjeto: `PROJ-00${i + 1}`,
       nomeProjeto: `${defaultProject.name} - Fase ${i + 1}`,
-    }
+    },
+    status: (i % 2 === 0 ? 'Aguardando' : 'Iniciado') as 'Aguardando' | 'Iniciado',
   }));
 
   const loadLocalFallback = () => {
@@ -293,6 +295,7 @@ export function App() {
             onSelectProject={setActiveProjectId}
             onDeleteProject={handleDeleteProject}
             onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
+            onUpdateProject={handleEditProject}
             setActiveTab={setActiveTab}
           />
         )}

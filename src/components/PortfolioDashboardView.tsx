@@ -21,6 +21,7 @@ interface PortfolioDashboardViewProps {
   onDeleteProject: (projectId: string) => void;
   onOpenNewProjectModal: () => void;
   setActiveTab: (tab: string) => void;
+  onUpdateProject?: (project: Project) => void;
 }
 
 export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
@@ -29,8 +30,11 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
   onDeleteProject,
   onOpenNewProjectModal,
   setActiveTab,
+  onUpdateProject,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [maxBudget, setMaxBudget] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'Todos' | 'Aguardando' | 'Iniciado'>('Todos');
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   // Combined Portfolio Metrics
@@ -54,11 +58,18 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
     return acc + curr.timesheet.reduce((a, c) => a + c.hours, 0);
   }, 0);
 
-  const filteredProjects = projects.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProjects = projects.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesBudget = maxBudget ? p.budget <= Number(maxBudget) : true;
+    
+    const pStatus = p.status || 'Aguardando';
+    const matchesStatus = statusFilter === 'Todos' || pStatus === statusFilter;
+    
+    return matchesSearch && matchesBudget && matchesStatus;
+  });
 
   const confirmDelete = () => {
     if (projectToDelete) {
@@ -175,21 +186,50 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
 
       {/* Projects Search & Cards Grid */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 glass-panel p-4 rounded-xl border border-slate-800">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-indigo-400" />
-            Lista de Projetos Registrados ({filteredProjects.length})
-          </h3>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-4 rounded-xl border border-slate-800">
+          <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-indigo-400" />
+              Lista de Projetos ({filteredProjects.length})
+            </h3>
+            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700 w-max">
+              {(['Todos', 'Aguardando', 'Iniciado'] as const).map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-md transition ${
+                    statusFilter === status 
+                      ? 'bg-indigo-600 text-white' 
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar por ID ou Nome..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 w-full sm:w-64"
-            />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="number"
+                placeholder="Verba Max (R$)"
+                value={maxBudget}
+                onChange={(e) => setMaxBudget(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-full sm:w-36"
+              />
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar por ID ou Nome..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 w-full sm:w-64"
+              />
+            </div>
           </div>
         </div>
 
@@ -219,6 +259,13 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
                       </span>
                       <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                         {project.durationMonths} Meses
+                      </span>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+                        (project.status || 'Aguardando') === 'Iniciado'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                          : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                      }`}>
+                        {project.status || 'Aguardando'}
                       </span>
                     </div>
 
@@ -279,17 +326,42 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Switch to Project Button */}
-                  <button
-                    onClick={() => {
-                      onSelectProject(project.id);
-                      setActiveTab('canvas');
-                    }}
-                    className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer border border-indigo-500/30"
-                  >
-                    <span>Abrir Canvas PMBOK</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-2">
+                    {onUpdateProject && (
+                      <button
+                        onClick={() => {
+                          const newStatus = (project.status || 'Aguardando') === 'Aguardando' ? 'Iniciado' : 'Aguardando';
+                          onUpdateProject({ ...project, status: newStatus });
+                        }}
+                        className={`w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer border ${
+                          (project.status || 'Aguardando') === 'Aguardando'
+                            ? 'bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border-emerald-500/30'
+                            : 'bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border-amber-500/30'
+                        }`}
+                      >
+                        {(project.status || 'Aguardando') === 'Aguardando' ? (
+                          <>
+                            <span>🚀 Iniciar Projeto</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Voltar p/ Aguardando</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        onSelectProject(project.id);
+                        setActiveTab('canvas');
+                      }}
+                      className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer border border-indigo-500/30"
+                    >
+                      <span>Abrir Canvas PMBOK</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

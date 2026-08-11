@@ -21,8 +21,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-DnhnyJTG.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CQqqlJZu.css">
+    <script type="module" crossorigin src="/assets/index-DvwrwRin.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BUGSHjuB.css">
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased font-sans">
     <div id="root"></div>
@@ -30,10 +30,11 @@
     <!-- Register PWA Service Worker -->
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((reg) => console.log('[PWA] Service Worker Registrado com Sucesso:', reg.scope))
-            .catch((err) => console.error('[PWA] Erro ao registrar Service Worker:', err));
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('[PWA] Service Worker Desativado e Removido com Sucesso');
+          }
         });
       }
     </script>
