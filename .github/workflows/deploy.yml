@@ -34,5 +34,5 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          # O diretório no servidor (ex: public_html ou www). Deixe vazio se a raiz for o diretório final.
-          server-dir: /public_html/
+          # O diretório no servidor já aponta para a raiz correta.
+          server-dir: /
