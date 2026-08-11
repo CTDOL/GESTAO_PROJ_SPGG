@@ -44,6 +44,27 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'reports', label: 'Relatórios PDF/Excel', icon: FileSpreadsheet },
   ];
 
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredProjects = projects
+    .filter(p => 
+      p.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .slice(0, 100); // Limita a 100 para não travar o DOM com 5000 divs
+
   return (
     <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,19 +83,57 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
 
-              {/* Selector for Registered Projects with ID */}
-              <div className="relative flex items-center mt-0.5">
-                <select
-                  value={activeProjectId}
-                  onChange={(e) => onSelectProject(e.target.value)}
-                  className="bg-slate-950/80 border border-slate-800 text-xs font-bold text-indigo-300 rounded-lg px-2 py-0.5 pr-6 focus:outline-none focus:border-indigo-500 cursor-pointer max-w-xs truncate font-mono"
+              {/* Custom Searchable Dropdown */}
+              <div className="relative flex items-center mt-0.5" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="bg-slate-950/80 border border-slate-800 text-xs font-bold text-indigo-300 rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500 cursor-pointer max-w-xs w-64 text-left truncate font-mono flex justify-between items-center"
                 >
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      [{p.code}] {p.name}
-                    </option>
-                  ))}
-                </select>
+                  <span className="truncate">[{activeProject.code}] {activeProject.name}</span>
+                  <svg className="w-3 h-3 ml-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50">
+                    <div className="p-2 border-b border-slate-700">
+                      <input
+                        type="text"
+                        placeholder="Pesquisar por ID ou Nome..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        autoFocus
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div className="max-h-64 overflow-y-auto p-1 custom-scrollbar">
+                      {filteredProjects.length === 0 ? (
+                        <div className="p-2 text-xs text-slate-500 text-center">Nenhum projeto encontrado.</div>
+                      ) : (
+                        filteredProjects.map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => {
+                              onSelectProject(p.id);
+                              setIsDropdownOpen(false);
+                              setSearchTerm('');
+                            }}
+                            className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-mono truncate transition-colors cursor-pointer ${
+                              p.id === activeProjectId 
+                                ? 'bg-indigo-600 text-white' 
+                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                            }`}
+                          >
+                            [{p.code}] {p.name}
+                          </button>
+                        ))
+                      )}
+                      {projects.length > 100 && filteredProjects.length === 100 && (
+                        <div className="p-1 text-[10px] text-slate-500 text-center">Refine a busca para ver mais...</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
