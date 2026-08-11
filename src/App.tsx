@@ -110,6 +110,17 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const path = window.location.pathname;
+    
+    if (params.get('action') === 'novo' || path === '/novo' || path === '/cadastro') {
+      setIsNewProjectModalOpen(true);
+      // Opcionalmente limpa a URL para não ficar abrindo sempre que der refresh
+      window.history.replaceState({}, document.title, '/');
+    }
+  }, []);
+
+  useEffect(() => {
     if (isLoading || !isDataLoaded) return;
     
     fetch('/api.php', {
