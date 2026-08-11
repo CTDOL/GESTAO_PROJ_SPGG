@@ -47,12 +47,25 @@ export function App() {
 
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
+  const generateTestProjects = () => Array.from({ length: 4 }).map((_, i) => ({
+    ...defaultProject,
+    id: `test-proj-${i + 1}`,
+    code: `PROJ-00${i + 1}`,
+    name: `${defaultProject.name} - Fase ${i + 1}`,
+    budget: defaultProject.budget + i * 10000,
+    canvasData: {
+      ...defaultProject.canvasData,
+      codigoProjeto: `PROJ-00${i + 1}`,
+      nomeProjeto: `${defaultProject.name} - Fase ${i + 1}`,
+    }
+  }));
+
   const loadLocalFallback = () => {
     const saved = localStorage.getItem('projtrack_db');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed) && parsed.length >= 4) {
           setProjects(parsed);
           setActiveProjectId(parsed[0].id);
           return true;
@@ -71,12 +84,13 @@ export function App() {
         return res.json();
       })
       .then((data: Project[]) => {
-        if (data && data.length > 0) {
+        if (data && data.length >= 4) {
           setProjects(data);
           setActiveProjectId(data[0].id);
         } else {
-          setProjects([]);
-          setActiveProjectId('');
+          const testProjects = generateTestProjects();
+          setProjects(testProjects);
+          setActiveProjectId(testProjects[0].id);
         }
         setIsDataLoaded(true);
       })
@@ -84,19 +98,7 @@ export function App() {
         console.warn('API error, loading local fallback ou test projects:', err);
         const hasLocal = loadLocalFallback();
         if (!hasLocal) {
-          // Gerar 4 projetos de teste
-          const testProjects: Project[] = Array.from({ length: 4 }).map((_, i) => ({
-            ...defaultProject,
-            id: `test-proj-${i + 1}`,
-            code: `PROJ-00${i + 1}`,
-            name: `${defaultProject.name} - Fase ${i + 1}`,
-            budget: defaultProject.budget + i * 10000,
-            canvasData: {
-              ...defaultProject.canvasData,
-              codigoProjeto: `PROJ-00${i + 1}`,
-              nomeProjeto: `${defaultProject.name} - Fase ${i + 1}`,
-            }
-          }));
+          const testProjects = generateTestProjects();
           setProjects(testProjects);
           setActiveProjectId(testProjects[0].id);
         }
