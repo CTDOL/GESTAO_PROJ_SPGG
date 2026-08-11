@@ -289,8 +289,8 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
             )}
           </div>
 
-          {/* COLUNA 3 (Center): STAKEHOLDERS */}
-          <div className="flex flex-col h-full">
+          {/* COLUNA 3 (Center): STAKEHOLDERS & ENTREGAS */}
+          <div className="flex flex-col space-y-3 h-full">
             {renderBlockCard(
               'STAKEHOLDERS',
               '(Patrocinador, Cliente, Equipe e Resistentes)',
@@ -298,12 +298,37 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
               Users,
               'bg-violet-600',
               stakeholdersList,
-              'h-full'
+              'flex-1'
             )}
+            
+            {/* ENTREGAS */}
+            <div className="glass-panel rounded-xl p-3.5 flex flex-col flex-1 border border-slate-800 hover:border-indigo-500/40 transition-all">
+              <div className="flex items-start justify-between border-b border-slate-800/80 pb-2 mb-2">
+                <div className="flex items-start space-x-2">
+                  <div className="p-1.5 rounded-lg bg-pink-600 text-white mt-0.5 shadow-sm">
+                    <ListChecks className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-100 leading-tight">ENTREGAS</h3>
+                    <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">(No particípio passado)</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2 overflow-y-auto max-h-48 pr-1">
+                {canvasData.planoAcao.map((item) => (
+                  <div key={item.id} className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80 hover:border-slate-700 transition">
+                    <span className="text-xs font-bold text-slate-100">{item.order}. {item.name}</span>
+                  </div>
+                ))}
+                {canvasData.planoAcao.length === 0 && (
+                  <p className="text-[10px] text-slate-500 italic py-2 text-center">Nenhuma entrega cadastrada.</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* COLUNA 4 (Center-Right): PREMISSAS & RESTRIÇÕES */}
-          <div className="flex flex-col h-full">
+          {/* COLUNA 4 (Center-Right): PREMISSAS & RESTRIÇÕES & DATAS */}
+          <div className="flex flex-col space-y-3 h-full">
             {renderBlockCard(
               'PREMISSAS & RESTRIÇÕES',
               '(O que TEM QUE ser considerado?)',
@@ -311,12 +336,38 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
               Lock,
               'bg-amber-600',
               premissasERestricoes,
-              'h-full'
+              'flex-1'
             )}
+            
+            {/* DATAS */}
+            <div className="glass-panel rounded-xl p-3.5 flex flex-col flex-1 border border-slate-800 hover:border-indigo-500/40 transition-all">
+              <div className="flex items-start justify-between border-b border-slate-800/80 pb-2 mb-2">
+                <div className="flex items-start space-x-2">
+                  <div className="p-1.5 rounded-lg bg-indigo-600 text-white mt-0.5 shadow-sm">
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-100 leading-tight">DATAS</h3>
+                    <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">(Para cada entrega)</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2 overflow-y-auto max-h-48 pr-1">
+                {canvasData.planoAcao.map((item) => (
+                  <div key={item.id} className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80 hover:border-slate-700 transition flex justify-between items-center">
+                    <span className="text-xs font-bold text-indigo-300">{item.month}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-semibold">{item.status}</span>
+                  </div>
+                ))}
+                {canvasData.planoAcao.length === 0 && (
+                  <p className="text-[10px] text-slate-500 italic py-2 text-center">Sem datas definidas.</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* COLUNA 5 (Right): RISCOS */}
-          <div className="flex flex-col h-full">
+          {/* COLUNA 5 (Right): RISCOS & INVESTIMENTO */}
+          <div className="flex flex-col space-y-3 h-full">
             {renderBlockCard(
               'RISCOS',
               '(O que pode impactar?)',
@@ -324,76 +375,41 @@ export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
               AlertTriangle,
               'bg-rose-600',
               undefined,
-              'h-full'
+              'flex-1'
             )}
+            
+            {/* INVESTIMENTO */}
+            <div className="glass-panel rounded-xl p-3.5 flex flex-col flex-1 border border-slate-800 hover:border-indigo-500/40 transition-all relative pb-10">
+              <div className="flex items-start justify-between border-b border-slate-800/80 pb-2 mb-2">
+                <div className="flex items-start space-x-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-600 text-white mt-0.5 shadow-sm">
+                    <Coins className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-100 leading-tight">INVESTIMENTO</h3>
+                    <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">(Para cada entrega)</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2 overflow-y-auto max-h-48 pr-1">
+                {canvasData.planoAcao.map((item) => (
+                  <div key={item.id} className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80 hover:border-slate-700 transition flex justify-between items-center">
+                    <span className="text-xs font-extrabold text-emerald-400">R$ {item.investment.toLocaleString('pt-BR')}</span>
+                    <span className="text-[9px] text-slate-400 font-medium text-right">{item.progress}%</span>
+                  </div>
+                ))}
+                {canvasData.planoAcao.length === 0 && (
+                  <p className="text-[10px] text-slate-500 italic py-2 text-center">Sem investimentos.</p>
+                )}
+              </div>
+              {/* Total Row */}
+              <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-slate-900/90 border-t border-slate-800 rounded-b-xl flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-300">TOTAL:</span>
+                <span className="text-xs font-extrabold text-emerald-400">R$ {totalInvestment.toLocaleString('pt-BR')}</span>
+              </div>
+            </div>
           </div>
 
-        </div>
-
-        {/* Lower Section (Bottom Right): PLANO DE AÇÃO v5 (ENTREGAS, DATAS, INVESTIMENTO) */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div className="flex items-center space-x-2">
-              <div className="p-1 rounded bg-pink-600 text-white">
-                <ListChecks className="h-4 w-4" />
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-100">
-                PLANO DE AÇÃO: ENTREGAS, DATAS E INVESTIMENTO
-              </h3>
-            </div>
-            <span className="text-xs font-extrabold text-emerald-400">
-              Total Orçado: R$ {totalInvestment.toLocaleString('pt-BR')}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* ENTREGAS Column */}
-            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
-              <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-200 border-b border-slate-800 pb-1.5">
-                <ListChecks className="h-4 w-4 text-pink-400" />
-                <span>ENTREGAS (no particípio passado)</span>
-              </div>
-              <ul className="space-y-1.5 text-xs text-slate-300">
-                {canvasData.planoAcao.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between p-1.5 bg-slate-900 rounded border border-slate-800/80">
-                    <span className="font-semibold text-slate-100">{item.order}. {item.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* DATAS Column */}
-            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
-              <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-200 border-b border-slate-800 pb-1.5">
-                <Calendar className="h-4 w-4 text-indigo-400" />
-                <span>DATAS (Para cada entrega)</span>
-              </div>
-              <ul className="space-y-1.5 text-xs text-slate-300">
-                {canvasData.planoAcao.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between p-1.5 bg-slate-900 rounded border border-slate-800/80">
-                    <span className="font-bold text-indigo-300">{item.month}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-semibold">{item.status}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* INVESTIMENTO Column */}
-            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
-              <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-200 border-b border-slate-800 pb-1.5">
-                <Coins className="h-4 w-4 text-emerald-400" />
-                <span>INVESTIMENTO (Para cada entrega)</span>
-              </div>
-              <ul className="space-y-1.5 text-xs text-slate-300">
-                {canvasData.planoAcao.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between p-1.5 bg-slate-900 rounded border border-slate-800/80">
-                    <span className="font-extrabold text-emerald-400">R$ {item.investment.toLocaleString('pt-BR')}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">{item.progress}% concluído</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
         </div>
 
         {/* Official Canvas v5 Footer Copyright Attribution */}
