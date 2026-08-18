@@ -1,7 +1,7 @@
 import { Project } from '../types';
 
 const STORAGE_KEY = 'projtrack_db';
-const API_URL = '/api/database';
+const API_URL = import.meta.env.PROD ? '/api.php' : '/api/database';
 
 let lastModifiedTimestamp = '0';
 
