@@ -1,4 +1,4 @@
-const CACHE_NAME = 'projtrack-pwa-v2';
+const CACHE_NAME = 'projtrack-pwa-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -9,7 +9,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching App Shell');
+      console.log('[Service Worker] Caching App Shell v3');
       return cache.addAll(ASSETS_TO_CACHE);
     }).then(() => self.skipWaiting())
   );
@@ -34,7 +34,7 @@ self.addEventListener('activate', (event) => {
 // Fetch Event (Stale-While-Revalidate Strategy)
 self.addEventListener('fetch', (event) => {
   // Ignora requisições não-GET e chamadas de API
-  if (event.request.method !== 'GET' || event.request.url.includes('api.php')) return;
+  if (event.request.method !== 'GET' || event.request.url.includes('api.php') || event.request.url.includes('/api/')) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
