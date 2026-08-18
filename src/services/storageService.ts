@@ -3,6 +3,8 @@ import { Project } from '../types';
 const STORAGE_KEY = 'projtrack_db';
 const API_URL = '/api/database';
 
+let lastModifiedTimestamp = '0';
+
 export const storageService = {
   /**
    * Lê os projetos do LocalStorage.
@@ -40,6 +42,10 @@ export const storageService = {
     try {
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error('API unreachable');
+      
+      const mtime = res.headers.get('X-Last-Modified');
+      if (mtime) lastModifiedTimestamp = mtime;
+
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
         return data;
@@ -55,13 +61,30 @@ export const storageService = {
    */
   syncToApi: async (projects: Project[]): Promise<void> => {
     try {
-      await fetch(API_URL, {
+      const res = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Last-Modified': lastModifiedTimestamp
+        },
         body: JSON.stringify(projects),
       });
+
+      if (res.status === 409) {
+        // Dispara um evento para a UI (ProjectContext) alertar e recarregar
+        window.dispatchEvent(new Event('sync-conflict'));
+        return;
+      }
+
+      const mtime = res.headers.get('X-Last-Modified');
+      if (mtime) {
+        lastModifiedTimestamp = mtime;
+      } else {
+        lastModifiedTimestamp = Date.now().toString(); // Fallback se a API não retornar no dev
+      }
     } catch (err) {
       console.warn('Falha na sincronização com a VPS (Offline):', err);
     }
   },
 };
+

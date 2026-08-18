@@ -102,6 +102,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     initializeData();
   }, []);
 
+  // Listener para conflitos de concorrência
+  useEffect(() => {
+    const handleConflict = () => {
+      alert("Alerta: Os dados foram modificados por outro usuário em outra sessão.\nA tela será recarregada para garantir que você não perca ou sobrescreva informações importantes.");
+      window.location.reload();
+    };
+
+    window.addEventListener('sync-conflict', handleConflict);
+    return () => window.removeEventListener('sync-conflict', handleConflict);
+  }, []);
+
   // Sincronização (Save) com Debounce
   useEffect(() => {
     if (isLoading || !isDataLoaded) return;

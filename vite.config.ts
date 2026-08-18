@@ -16,14 +16,24 @@ const localDatabasePlugin = (): Plugin => {
           const dbPath = path.resolve(process.cwd(), 'public/database.json');
           
           if (req.method === 'GET') {
-            fs.readFile(dbPath, 'utf-8', (err: NodeJS.ErrnoException | null, data: string) => {
+            fs.stat(dbPath, (err, stats) => {
               if (err) {
-                res.statusCode = 500;
-                res.end(JSON.stringify({ error: 'Erro ao ler o arquivo.' }));
+                // Se o arquivo não existir, retorna array vazio e mtime 0
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('X-Last-Modified', '0');
+                res.end('[]');
                 return;
               }
-              res.setHeader('Content-Type', 'application/json');
-              res.end(data || '[]');
+              fs.readFile(dbPath, 'utf-8', (err, data) => {
+                if (err) {
+                  res.statusCode = 500;
+                  res.end(JSON.stringify({ error: 'Erro ao ler o arquivo.' }));
+                  return;
+                }
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('X-Last-Modified', stats.mtimeMs.toString());
+                res.end(data || '[]');
+              });
             });
             return;
           }
@@ -34,6 +44,18 @@ const localDatabasePlugin = (): Plugin => {
               body += chunk.toString();
             });
             req.on('end', () => {
+              // Verifica a versão
+              const clientMtime = req.headers['x-last-modified'];
+              if (clientMtime && fs.existsSync(dbPath)) {
+                const stats = fs.statSync(dbPath);
+                // Dá uma tolerância de 1 segundo (1000ms) para arredondamentos de filesystem
+                if (parseFloat(clientMtime as string) < stats.mtimeMs - 1000) {
+                  res.statusCode = 409;
+                  res.end(JSON.stringify({ error: 'Conflict' }));
+                  return;
+                }
+              }
+
               fs.writeFile(dbPath, body, (err: NodeJS.ErrnoException | null) => {
                 if (err) {
                   res.statusCode = 500;
@@ -41,6 +63,7 @@ const localDatabasePlugin = (): Plugin => {
                   return;
                 }
                 res.statusCode = 200;
+                res.setHeader('X-Last-Modified', Date.now().toString());
                 res.end(JSON.stringify({ success: true }));
               });
             });
