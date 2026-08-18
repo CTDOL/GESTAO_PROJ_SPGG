@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PMBOKCanvasData, CanvasItem } from '../types';
+import { useProjectStore } from '../store/ProjectContext';
 import { 
   Target, 
   MessageSquare, 
@@ -21,23 +22,19 @@ interface CanvasItemWithCat extends CanvasItem {
   category?: string;
 }
 
-interface PMBOKCanvasViewProps {
-  canvasData: PMBOKCanvasData;
-  setCanvasData: React.Dispatch<React.SetStateAction<PMBOKCanvasData>>;
-  onDeleteProject?: () => void;
-}
-
-export const PMBOKCanvasView: React.FC<PMBOKCanvasViewProps> = ({
-  canvasData,
-  setCanvasData,
-  onDeleteProject,
-}) => {
+export const PMBOKCanvasView: React.FC = () => {
+  const { activeProject, setCanvasData, deleteProject } = useProjectStore();
+  const canvasData = activeProject?.canvasData;
+  const onDeleteProject = activeProject ? () => deleteProject(activeProject.id) : undefined;
+  
   const [activeModalBlock, setActiveModalBlock] = useState<keyof PMBOKCanvasData | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemTag, setNewItemTag] = useState('');
   const [printMode, setPrintMode] = useState<'single' | 'poster'>('single');
+
+  if (!canvasData) return null;
 
   const handlePrint = (mode: 'single' | 'poster') => {
     setPrintMode(mode);

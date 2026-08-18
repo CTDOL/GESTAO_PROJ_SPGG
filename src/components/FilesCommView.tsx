@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ProjectFile, DiscussionMessage } from '../types';
+import { useProjectStore } from '../store/ProjectContext';
 import { 
   FolderGit2, 
   Download, 
@@ -13,19 +14,13 @@ import {
   Clock
 } from 'lucide-react';
 
-interface FilesCommViewProps {
-  files: ProjectFile[];
-  setFiles: React.Dispatch<React.SetStateAction<ProjectFile[]>>;
-  discussions: DiscussionMessage[];
-  setDiscussions: React.Dispatch<React.SetStateAction<DiscussionMessage[]>>;
-}
-
-export const FilesCommView: React.FC<FilesCommViewProps> = ({
-  files,
-  setFiles,
-  discussions,
-  setDiscussions
-}) => {
+export const FilesCommView: React.FC = () => {
+  const { activeProject, setFiles, setDiscussions } = useProjectStore();
+  
+  if (!activeProject) return null;
+  
+  const files = activeProject.files;
+  const discussions = activeProject.discussions;
   const [newMsgText, setNewMsgText] = useState('');
   const [selectedAuthor, setSelectedAuthor] = useState('Marcos Silva');
   const [newFileName, setNewFileName] = useState('');
@@ -243,7 +238,7 @@ export const FilesCommView: React.FC<FilesCommViewProps> = ({
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Categoria</label>
                 <select
                   value={newFileCategory}
-                  onChange={e => setNewFileCategory(e.target.value as any)}
+                  onChange={e => setNewFileCategory(e.target.value as ProjectFile['category'])}
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none"
                 >
                   <option value="Requisitos">Requisitos</option>

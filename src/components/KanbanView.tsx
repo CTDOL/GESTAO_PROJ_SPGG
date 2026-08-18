@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Task, StatusType, PriorityType, DeliveryItem } from '../types';
+import { Task, StatusType, PriorityType } from '../types';
+import { useProjectStore } from '../store/ProjectContext';
 import { 
   Plus, 
   Search, 
@@ -12,14 +13,16 @@ import {
   MoreVertical,
   X
 } from 'lucide-react';
+import { TaskModal } from './TaskModal';
 
-interface KanbanViewProps {
-  tasks: Task[];
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  deliveries: DeliveryItem[];
-}
-
-export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliveries }) => {
+export const KanbanView: React.FC = () => {
+  const { activeProject, setTasks } = useProjectStore();
+  
+  if (!activeProject) return null;
+  
+  const { tasks, canvasData } = activeProject;
+  const deliveries = canvasData.planoAcao;
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
@@ -27,18 +30,6 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliver
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-
-  // Form Fields
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<StatusType>('backlog');
-  const [priority, setPriority] = useState<PriorityType>('media');
-  const [assignee, setAssignee] = useState('Lucas Mendes');
-  const [assigneeRole, setAssigneeRole] = useState('Dev Frontend');
-  const [deliveryId, setDeliveryId] = useState('del-3');
-  const [lgpdTag, setLgpdTag] = useState(false);
-  const [dueDate, setDueDate] = useState('2026-06-30');
-  const [estimatedHours, setEstimatedHours] = useState(20);
 
   const teamMembers = [
     { name: 'Marcos Silva', role: 'Líder Técnico' },
@@ -57,66 +48,34 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliver
 
   const handleOpenCreateModal = () => {
     setEditingTask(null);
-    setTitle('');
-    setDescription('');
-    setStatus('backlog');
-    setPriority('media');
-    setAssignee('Lucas Mendes');
-    setAssigneeRole('Dev Frontend');
-    setDeliveryId('del-3');
-    setLgpdTag(false);
-    setDueDate('2026-06-30');
-    setEstimatedHours(20);
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (task: Task) => {
     setEditingTask(task);
-    setTitle(task.title);
-    setDescription(task.description);
-    setStatus(task.status);
-    setPriority(task.priority);
-    setAssignee(task.assignee);
-    setAssigneeRole(task.assigneeRole);
-    setDeliveryId(task.deliveryId);
-    setLgpdTag(!!task.lgpdTag);
-    setDueDate(task.dueDate);
-    setEstimatedHours(task.estimatedHours);
     setIsModalOpen(true);
   };
 
-  const handleSaveTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-
-    if (editingTask) {
+  const handleSaveTask = (taskData: Partial<Task>, isEditing: boolean) => {
+    if (isEditing && editingTask) {
       setTasks(prev => prev.map(t => t.id === editingTask.id ? {
         ...t,
-        title,
-        description,
-        status,
-        priority,
-        assignee,
-        assigneeRole,
-        deliveryId,
-        lgpdTag,
-        dueDate,
-        estimatedHours
-      } : t));
+        ...taskData
+      } as Task : t));
     } else {
       const newTask: Task = {
         id: `tsk-${Date.now()}`,
-        title,
-        description,
-        status,
-        priority,
-        assignee,
-        assigneeRole,
-        deliveryId,
-        lgpdTag,
-        dueDate,
+        title: taskData.title || '',
+        description: taskData.description || '',
+        status: taskData.status || 'backlog',
+        priority: taskData.priority || 'media',
+        assignee: taskData.assignee || '',
+        assigneeRole: taskData.assigneeRole || '',
+        deliveryId: taskData.deliveryId || '',
+        lgpdTag: taskData.lgpdTag || false,
+        dueDate: taskData.dueDate || '',
         hoursSpent: 0,
-        estimatedHours
+        estimatedHours: taskData.estimatedHours || 0
       };
       setTasks(prev => [...prev, newTask]);
     }
@@ -134,6 +93,34 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliver
     const matchesAssignee = selectedAssignee === 'all' || t.assignee === selectedAssignee;
     return matchesSearch && matchesPriority && matchesAssignee;
   });
+
+  const [dragOverColId, setDragOverColId] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('taskId', taskId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, colId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverColId !== colId) {
+      setDragOverColId(colId);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    setDragOverColId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, colId: string) => {
+    e.preventDefault();
+    setDragOverColId(null);
+    const taskId = e.dataTransfer.getData('taskId');
+    if (taskId) {
+      handleStatusChange(taskId, colId as StatusType);
+    }
+  };
 
   return (
     <div className="space-y-6 pb-12">
@@ -196,11 +183,17 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliver
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {columns.map(col => {
           const colTasks = filteredTasks.filter(t => t.status === col.id);
+          const isDragOver = dragOverColId === col.id;
 
           return (
             <div
               key={col.id}
-              className={`glass-panel p-4 rounded-2xl border ${col.color} bg-slate-900/60 flex flex-col h-[680px]`}
+              className={`glass-panel p-4 rounded-2xl border ${col.color} flex flex-col h-[680px] transition-colors duration-200 ${
+                isDragOver ? 'bg-slate-800/80 ring-2 ring-indigo-500/50' : 'bg-slate-900/60'
+              }`}
+              onDragOver={(e) => handleDragOver(e, col.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, col.id)}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
@@ -218,7 +211,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliver
                   return (
                     <div
                       key={task.id}
-                      className="glass-panel p-4 rounded-xl border border-slate-800 hover:border-indigo-500/40 bg-slate-950/80 transition cursor-pointer group"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, task.id)}
+                      className="glass-panel p-4 rounded-xl border border-slate-800 hover:border-indigo-500/40 bg-slate-950/80 transition cursor-grab active:cursor-grabbing group"
                       onClick={() => handleOpenEditModal(task)}
                     >
                       {/* Delivery badge & priority */}
@@ -241,17 +236,17 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliver
                       </div>
 
                       {/* Task Title */}
-                      <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition leading-snug">
+                      <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition leading-snug pointer-events-none">
                         {task.title}
                       </h4>
 
                       {/* Task Description */}
-                      <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-snug">
+                      <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-snug pointer-events-none">
                         {task.description}
                       </p>
 
                       {/* Tags & LGPD Flag */}
-                      <div className="flex items-center space-x-2 mt-3 pt-2 border-t border-slate-900">
+                      <div className="flex items-center space-x-2 mt-3 pt-2 border-t border-slate-900 pointer-events-none">
                         {task.lgpdTag && (
                           <span className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
                             <ShieldCheck className="h-3 w-3" />
@@ -266,7 +261,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliver
 
                       {/* Footer: Assignee & Column Mover */}
                       <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-800">
-                        <div className="flex items-center space-x-1.5">
+                        <div className="flex items-center space-x-1.5 pointer-events-none">
                           <div className="h-5 w-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">
                             {task.assignee.charAt(0)}
                           </div>
@@ -278,8 +273,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliver
                           value={task.status}
                           onClick={e => e.stopPropagation()}
                           onChange={e => {
-                            e.stopPropagation();
-                            handleStatusChange(task.id, e.target.value as StatusType);
+                             e.stopPropagation();
+                             handleStatusChange(task.id, e.target.value as StatusType);
                           }}
                           className="text-[10px] bg-slate-900 border border-slate-700 text-slate-300 rounded px-1 py-0.5 focus:outline-none"
                         >
@@ -306,158 +301,13 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ tasks, setTasks, deliver
       </div>
 
       {/* Create / Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-700 shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white">
-                {editingTask ? 'Editar Tarefa' : 'Nova Tarefa no ProjTrack'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveTask} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Título da Tarefa</label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="Ex: Desenvolver componente de relatórios"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Descrição</label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Detalhamento técnico da tarefa..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Status</label>
-                  <select
-                    value={status}
-                    onChange={e => setStatus(e.target.value as StatusType)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none"
-                  >
-                    <option value="backlog">Backlog</option>
-                    <option value="in_progress">Em Andamento</option>
-                    <option value="review">Em Revisão</option>
-                    <option value="completed">Concluída</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Prioridade</label>
-                  <select
-                    value={priority}
-                    onChange={e => setPriority(e.target.value as PriorityType)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none"
-                  >
-                    <option value="alta">Alta</option>
-                    <option value="media">Média</option>
-                    <option value="baixa">Baixa</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Responsável</label>
-                  <select
-                    value={assignee}
-                    onChange={e => {
-                      const member = teamMembers.find(m => m.name === e.target.value);
-                      setAssignee(e.target.value);
-                      if (member) setAssigneeRole(member.role);
-                    }}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none"
-                  >
-                    {teamMembers.map(m => (
-                      <option key={m.name} value={m.name}>{m.name} ({m.role})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Entrega Vinculada</label>
-                  <select
-                    value={deliveryId}
-                    onChange={e => setDeliveryId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none"
-                  >
-                    {deliveries.map(d => (
-                      <option key={d.id} value={d.id}>{d.month}: {d.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Horas Estimadas</label>
-                  <input
-                    type="number"
-                    value={estimatedHours}
-                    onChange={e => setEstimatedHours(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Data Limite</label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={e => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="lgpdCheck"
-                  checked={lgpdTag}
-                  onChange={e => setLgpdTag(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500"
-                />
-                <label htmlFor="lgpdCheck" className="text-xs text-slate-300 flex items-center gap-1">
-                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                  Requisito relevante para Conformidade LGPD
-                </label>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-500 transition"
-                >
-                  {editingTask ? 'Salvar Alterações' : 'Criar Tarefa'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <TaskModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveTask}
+        editingTask={editingTask}
+        deliveries={deliveries}
+      />
     </div>
   );
 };

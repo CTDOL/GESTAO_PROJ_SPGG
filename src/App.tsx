@@ -9,105 +9,21 @@ import { TimesheetView } from './components/TimesheetView';
 import { FilesCommView } from './components/FilesCommView';
 import { ReportsView } from './components/ReportsView';
 import { NewProjectModal } from './components/NewProjectModal';
-import { 
-  initialPMBOKData, 
-  initialTasks, 
-  initialTimesheet, 
-  initialFiles, 
-  initialDiscussions 
-} from './data/initialData';
-import { Project, PMBOKCanvasData, Task, DeliveryItem, TimesheetEntry, ProjectFile, DiscussionMessage } from './types';
+import { useProjectStore } from './store/ProjectContext';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('portfolio');
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Initial Project: ProjTrack (PROJ-001)
-  const defaultProject: Project = {
-    id: 'projtrack-main',
-    code: 'PROJ-001',
-    name: initialPMBOKData.nomeProjeto,
-    description: 'Sistema Integrado de Controle de Projetos (PMBOK Canvas v5)',
-    budget: 120000,
-    durationMonths: 6,
-    canvasData: {
-      ...initialPMBOKData,
-      codigoProjeto: 'PROJ-001',
-    },
-    tasks: initialTasks,
-    timesheet: initialTimesheet,
-    files: initialFiles,
-    discussions: initialDiscussions,
-    status: 'Aguardando',
-  };
-
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState<string>('');
-
-  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
-
-  const generateTestProjects = () => Array.from({ length: 4 }).map((_, i) => ({
-    ...defaultProject,
-    id: `test-proj-${i + 1}`,
-    code: `PROJ-00${i + 1}`,
-    name: `${defaultProject.name} - Fase ${i + 1}`,
-    budget: defaultProject.budget + i * 10000,
-    canvasData: {
-      ...defaultProject.canvasData,
-      codigoProjeto: `PROJ-00${i + 1}`,
-      nomeProjeto: `${defaultProject.name} - Fase ${i + 1}`,
-    },
-    status: (i % 2 === 0 ? 'Aguardando' : 'Iniciado') as 'Aguardando' | 'Iniciado',
-  }));
-
-  const loadLocalFallback = () => {
-    const saved = localStorage.getItem('projtrack_db');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= 4) {
-          setProjects(parsed);
-          setActiveProjectId(parsed[0].id);
-          return true;
-        }
-      } catch (e) {
-        console.error('Erro ao ler localStorage', e);
-      }
-    }
-    return false;
-  };
-
-  useEffect(() => {
-    fetch('/api.php')
-      .then((res) => {
-        if (!res.ok) throw new Error('API unreachable');
-        return res.json();
-      })
-      .then((data: Project[]) => {
-        if (data && data.length >= 4) {
-          setProjects(data);
-          setActiveProjectId(data[0].id);
-        } else {
-          const testProjects = generateTestProjects();
-          setProjects(testProjects);
-          setActiveProjectId(testProjects[0].id);
-        }
-        setIsDataLoaded(true);
-      })
-      .catch((err) => {
-        console.warn('API error, loading local fallback ou test projects:', err);
-        const hasLocal = loadLocalFallback();
-        if (!hasLocal) {
-          const testProjects = generateTestProjects();
-          setProjects(testProjects);
-          setActiveProjectId(testProjects[0].id);
-        }
-        setIsDataLoaded(true);
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+  const { 
+    projects, 
+    activeProjectId, 
+    activeProject, 
+    isLoading,
+    setActiveProjectId,
+    deleteProject
+  } = useProjectStore();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -115,126 +31,9 @@ export function App() {
     
     if (params.get('action') === 'novo' || path === '/novo' || path === '/cadastro') {
       setIsNewProjectModalOpen(true);
-      // Opcionalmente limpa a URL para não ficar abrindo sempre que der refresh
       window.history.replaceState({}, document.title, '/');
     }
   }, []);
-
-  useEffect(() => {
-    if (isLoading || !isDataLoaded) return;
-    
-    fetch('/api.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(projects),
-    }).catch((err) => console.error('Failed to sync to VPS:', err));
-  }, [projects, isLoading, isDataLoaded]);
-
-
-  useEffect(() => {
-    if (isLoading) return;
-    const saveTimer = setTimeout(() => {
-      const payload = JSON.stringify(projects);
-      
-      // Salva localmente por segurança
-      localStorage.setItem('projtrack_db', payload);
-
-      // Sincroniza com a API na VPS
-      fetch('/api.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload
-      }).catch(err => console.log('Salvo apenas no localStorage (API offline):', err));
-      
-    }, 1000); // Debounce de 1 segundo
-
-    return () => clearTimeout(saveTimer);
-  }, [projects, isLoading]);
-
-  // Active Project Data
-  const activeProject = projects.find((p) => p.id === activeProjectId) || (projects.length > 0 ? projects[0] : null);
-
-  // Helper to update active project state
-  const updateActiveProject = (updater: (prevProject: Project) => Project) => {
-    setProjects((prevProjects) =>
-      prevProjects.map((p) => (p.id === activeProjectId ? updater(p) : p))
-    );
-  };
-
-  const handleAddProject = (newProject: Project) => {
-    setProjects((prev) => [...prev, newProject]);
-    setActiveProjectId(newProject.id);
-    setActiveTab('canvas');
-  };
-
-  const handleEditProject = (updatedProject: Project) => {
-    setProjects((prev) => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-  };
-
-  const handleDeleteProject = (projectId: string) => {
-    setProjects((prevProjects) => {
-      const updatedProjects = prevProjects.filter((p) => p.id !== projectId);
-      
-      // If we deleted the active project, switch to the first available project
-      if (activeProjectId === projectId) {
-        if (updatedProjects.length > 0) {
-          setActiveProjectId(updatedProjects[0].id);
-        } else {
-          setActiveProjectId('');
-        }
-      }
-      return updatedProjects;
-    });
-  };
-
-  const setCanvasData = (action: React.SetStateAction<PMBOKCanvasData>) => {
-    updateActiveProject((prev) => ({
-      ...prev,
-      canvasData: typeof action === 'function' ? action(prev.canvasData) : action,
-    }));
-  };
-
-  const setTasks = (action: React.SetStateAction<Task[]>) => {
-    updateActiveProject((prev) => ({
-      ...prev,
-      tasks: typeof action === 'function' ? action(prev.tasks) : action,
-    }));
-  };
-
-  const setDeliveries = (action: React.SetStateAction<DeliveryItem[]>) => {
-    updateActiveProject((prev) => {
-      const nextDeliveries = typeof action === 'function' ? action(prev.canvasData.planoAcao) : action;
-      return {
-        ...prev,
-        canvasData: {
-          ...prev.canvasData,
-          planoAcao: nextDeliveries,
-        },
-      };
-    });
-  };
-
-  const setTimesheet = (action: React.SetStateAction<TimesheetEntry[]>) => {
-    updateActiveProject((prev) => ({
-      ...prev,
-      timesheet: typeof action === 'function' ? action(prev.timesheet) : action,
-    }));
-  };
-
-  const setFiles = (action: React.SetStateAction<ProjectFile[]>) => {
-    updateActiveProject((prev) => ({
-      ...prev,
-      files: typeof action === 'function' ? action(prev.files) : action,
-    }));
-  };
-
-  const setDiscussions = (action: React.SetStateAction<DiscussionMessage[]>) => {
-    updateActiveProject((prev) => ({
-      ...prev,
-      discussions: typeof action === 'function' ? action(prev.discussions) : action,
-    }));
-  };
-
 
   if (isLoading) {
     return (
@@ -269,13 +68,10 @@ export function App() {
           </button>
         </div>
 
-        {/* Modal needs to be rendered here so they can actually create the project */}
         {isNewProjectModalOpen && (
           <NewProjectModal
             isOpen={isNewProjectModalOpen}
             onClose={() => setIsNewProjectModalOpen(false)}
-            onAddProject={handleAddProject}
-            existingProjectsCount={0}
           />
         )}
       </div>
@@ -290,9 +86,6 @@ export function App() {
         <Navbar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          projects={projects}
-          activeProjectId={activeProject.id}
-          onSelectProject={setActiveProjectId}
           onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
           onOpenEditProjectModal={() => setIsEditModalOpen(true)}
         />
@@ -302,81 +95,24 @@ export function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 print:pt-0 print:px-0">
         {activeTab === 'portfolio' && (
           <PortfolioDashboardView
-            projects={projects}
-            onSelectProject={setActiveProjectId}
-            onDeleteProject={handleDeleteProject}
             onOpenNewProjectModal={() => setIsNewProjectModalOpen(true)}
-            onUpdateProject={handleEditProject}
             setActiveTab={setActiveTab}
           />
         )}
-        {/* Render rest of the tabs... */}
 
-        {activeTab === 'canvas' && (
-          <PMBOKCanvasView
-            canvasData={activeProject.canvasData}
-            setCanvasData={setCanvasData}
-            onDeleteProject={() => handleDeleteProject(activeProject.id)}
-          />
-        )}
-
-        {activeTab === 'dashboard' && (
-          <DashboardView
-            canvasData={activeProject.canvasData}
-            tasks={activeProject.tasks}
-            timesheet={activeProject.timesheet}
-          />
-        )}
-
-        {activeTab === 'kanban' && (
-          <KanbanView
-            tasks={activeProject.tasks}
-            setTasks={setTasks}
-            deliveries={activeProject.canvasData.planoAcao}
-          />
-        )}
-
-        {activeTab === 'gantt' && (
-          <GanttView
-            deliveries={activeProject.canvasData.planoAcao}
-            setDeliveries={setDeliveries}
-            budget={activeProject.budget}
-            durationMonths={activeProject.durationMonths}
-          />
-        )}
-
-        {activeTab === 'timesheet' && (
-          <TimesheetView
-            timesheet={activeProject.timesheet}
-            setTimesheet={setTimesheet}
-            deliveries={activeProject.canvasData.planoAcao}
-          />
-        )}
-
-        {activeTab === 'files' && (
-          <FilesCommView
-            files={activeProject.files}
-            setFiles={setFiles}
-            discussions={activeProject.discussions}
-            setDiscussions={setDiscussions}
-          />
-        )}
-
-        {activeTab === 'reports' && (
-          <ReportsView
-            canvasData={activeProject.canvasData}
-            tasks={activeProject.tasks}
-            timesheet={activeProject.timesheet}
-          />
-        )}
+        {activeTab === 'canvas' && <PMBOKCanvasView />}
+        {activeTab === 'dashboard' && <DashboardView />}
+        {activeTab === 'kanban' && <KanbanView />}
+        {activeTab === 'gantt' && <GanttView />}
+        {activeTab === 'timesheet' && <TimesheetView />}
+        {activeTab === 'files' && <FilesCommView />}
+        {activeTab === 'reports' && <ReportsView />}
       </main>
 
       {isNewProjectModalOpen && (
         <NewProjectModal
           isOpen={isNewProjectModalOpen}
           onClose={() => setIsNewProjectModalOpen(false)}
-          onAddProject={handleAddProject}
-          existingProjectsCount={projects.length}
         />
       )}
 
@@ -384,10 +120,7 @@ export function App() {
         <NewProjectModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onAddProject={handleAddProject}
-          onEditProject={handleEditProject}
           projectToEdit={activeProject}
-          existingProjectsCount={projects.length}
         />
       )}
 

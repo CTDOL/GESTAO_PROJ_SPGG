@@ -1,18 +1,17 @@
 import React, { useRef } from 'react';
-import { PMBOKCanvasData, Task, TimesheetEntry } from '../types';
+import { useProjectStore } from '../store/ProjectContext';
 import { FileSpreadsheet, FileText, Download, Printer, ShieldCheck, CheckCircle2, TrendingUp, DollarSign } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-interface ReportsViewProps {
-  canvasData: PMBOKCanvasData;
-  tasks: Task[];
-  timesheet: TimesheetEntry[];
-}
-
-export const ReportsView: React.FC<ReportsViewProps> = ({ canvasData, tasks, timesheet }) => {
+export const ReportsView: React.FC = () => {
+  const { activeProject } = useProjectStore();
   const reportRef = useRef<HTMLDivElement>(null);
+
+  if (!activeProject) return null;
+  
+  const { canvasData, tasks, timesheet } = activeProject;
 
   const totalInvestment = (canvasData.planoAcao || []).reduce((acc, curr) => acc + curr.investment, 0);
   const totalHoursSpent = (tasks || []).reduce((acc, curr) => acc + curr.hoursSpent, 0);

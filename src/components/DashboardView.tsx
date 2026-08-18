@@ -1,5 +1,5 @@
 import React from 'react';
-import { PMBOKCanvasData, Task, TimesheetEntry } from '../types';
+import { useProjectStore } from '../store/ProjectContext';
 import { 
   TrendingUp, 
   DollarSign, 
@@ -13,13 +13,12 @@ import {
   FileCheck
 } from 'lucide-react';
 
-interface DashboardViewProps {
-  canvasData: PMBOKCanvasData;
-  tasks: Task[];
-  timesheet: TimesheetEntry[];
-}
-
-export const DashboardView: React.FC<DashboardViewProps> = ({ canvasData, tasks, timesheet }) => {
+export const DashboardView: React.FC = () => {
+  const { activeProject } = useProjectStore();
+  
+  if (!activeProject) return null;
+  
+  const { canvasData, tasks, timesheet } = activeProject;
   const totalInvestment = canvasData.planoAcao.reduce((acc, curr) => acc + curr.investment, 0);
   
   // Realized investment calculation based on completed or in-progress deliveries

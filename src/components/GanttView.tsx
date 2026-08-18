@@ -1,16 +1,17 @@
 import React from 'react';
 import { DeliveryItem } from '../types';
+import { useProjectStore } from '../store/ProjectContext';
 import { Calendar, DollarSign, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
-interface GanttViewProps {
-  deliveries: DeliveryItem[];
-  setDeliveries: React.Dispatch<React.SetStateAction<DeliveryItem[]>>;
-  budget: number;
-  durationMonths: number;
-}
-
-export const GanttView: React.FC<GanttViewProps> = ({ deliveries, setDeliveries, budget, durationMonths }) => {
-  const months = ['Mês 1', 'Mês 2', 'Mês 3', 'Mês 4', 'Mês 5', 'Mês 6'];
+export const GanttView: React.FC = () => {
+  const { activeProject, setDeliveries } = useProjectStore();
+  
+  if (!activeProject) return null;
+  
+  const deliveries = activeProject.canvasData.planoAcao;
+  const budget = activeProject.budget;
+  const durationMonths = activeProject.durationMonths;
+  
 
   const handleProgressChange = (id: string, newProgress: number) => {
     setDeliveries(prev => prev.map(del => {
@@ -24,17 +25,20 @@ export const GanttView: React.FC<GanttViewProps> = ({ deliveries, setDeliveries,
   };
 
   const getStartAndSpan = (monthNumber: number) => {
-    // Map month number to grid columns
-    switch (monthNumber) {
-      case 1: return { colStart: 1, span: 1 };
-      case 2: return { colStart: 2, span: 1 };
-      case 3: return { colStart: 2, span: 2 };
-      case 4: return { colStart: 3, span: 2 };
-      case 5: return { colStart: 4, span: 2 };
-      case 6: return { colStart: 5, span: 2 };
-      default: return { colStart: 1, span: 1 };
-    }
+    // Se o projeto for maior, podemos ajustar o span. Por padrão, cada entrega ocupa 1 mês.
+    // Para manter a fluidez de projetos que duram 6 meses mas têm 5 entregas, podemos manter 
+    // um span dinâmico simples:
+    return { colStart: monthNumber, span: 1 };
   };
+
+  // Dinâmico: Array de meses baseado na duração do projeto (no mínimo 1 mês)
+  const totalMonths = Math.max(1, durationMonths);
+  const months = Array.from({ length: totalMonths }, (_, i) => `Mês ${i + 1}`);
+
+  // Dinâmico: Descobre o "Mês Atual" baseado na primeira entrega que está "Em Andamento"
+  const currentDelivery = deliveries.find(d => d.status === 'Em Andamento') || deliveries.find(d => d.status === 'Planejado') || deliveries[deliveries.length - 1];
+  const currentMonthNumber = currentDelivery ? currentDelivery.monthNumber : 1;
+  const currentMonthIndex = currentMonthNumber - 1;
 
   return (
     <div className="space-y-6 pb-12">
@@ -49,35 +53,38 @@ export const GanttView: React.FC<GanttViewProps> = ({ deliveries, setDeliveries,
           </div>
           <h1 className="text-xl font-extrabold text-white mt-1">Visão de Portfólio: Gantt & Milestones</h1>
           <p className="text-xs text-slate-400">
-            Acompanhamento das 5 entregas chave do projeto com percentual físico e desembolso orçamentário.
+            Acompanhamento das entregas chave do projeto com percentual físico e desembolso orçamentário.
           </p>
         </div>
 
         <div className="flex items-center space-x-3 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
           <div className="text-right">
-            <div className="text-[10px] uppercase font-bold text-slate-400">Entrega Atual</div>
-            <div className="text-sm font-extrabold text-indigo-400">Mês 4 (Desenvolvimento Módulos)</div>
+            <div className="text-[10px] uppercase font-bold text-slate-400">Entrega Atual ({currentDelivery?.status})</div>
+            <div className="text-sm font-extrabold text-indigo-400">Mês {currentMonthNumber} ({currentDelivery?.name.substring(0, 20)}...)</div>
           </div>
         </div>
       </div>
 
       {/* Gantt Interactive Chart Container */}
-      <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+      <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6 overflow-x-auto">
         
         {/* Months Header Grid */}
-        <div className="hidden md:grid grid-cols-6 gap-2 text-center text-xs font-bold text-slate-300 pb-3 border-b border-slate-800">
+        <div 
+          className="hidden md:grid gap-2 text-center text-xs font-bold text-slate-300 pb-3 border-b border-slate-800 min-w-[600px]"
+          style={{ gridTemplateColumns: `repeat(${totalMonths}, minmax(0, 1fr))` }}
+        >
           {months.map((m, idx) => (
-            <div key={m} className={`py-2 rounded-lg ${idx === 3 ? 'bg-indigo-950/60 text-indigo-300 border border-indigo-500/40' : 'bg-slate-900/60'}`}>
+            <div key={m} className={`py-2 rounded-lg ${idx === currentMonthIndex ? 'bg-indigo-950/60 text-indigo-300 border border-indigo-500/40' : 'bg-slate-900/60'}`}>
               <div>{m}</div>
               <div className="text-[10px] font-medium text-slate-400">
-                {idx === 3 ? '(Mês Atual)' : ''}
+                {idx === currentMonthIndex ? '(Mês Atual)' : ''}
               </div>
             </div>
           ))}
         </div>
 
         {/* Deliveries Timeline Rows */}
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-[600px]">
           {deliveries.map((del) => {
             const { colStart, span } = getStartAndSpan(del.monthNumber);
 
@@ -123,32 +130,33 @@ export const GanttView: React.FC<GanttViewProps> = ({ deliveries, setDeliveries,
 
                 {/* Visual Bar representation in Gantt */}
                 <div className="grid grid-cols-6 gap-2 items-center bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
-                  {months.map((_, index) => {
-                    const monthIndex = index + 1;
-                    const isActiveMonth = monthIndex >= colStart && monthIndex < colStart + span;
+                  {/* Células vazias antes da barra */}
+                  {Array.from({ length: colStart - 1 }).map((_, i) => (
+                    <div key={`before-${i}`} className="w-full h-1 bg-slate-800/40 rounded" />
+                  ))}
 
-                    return (
-                      <div key={index} className="h-6 flex items-center justify-center">
-                        {isActiveMonth ? (
-                          <div className="w-full h-full bg-slate-800 rounded-md overflow-hidden p-0.5 relative group">
-                            <div
-                              className={`h-full rounded transition-all duration-300 ${
-                                del.progress === 100
-                                  ? 'bg-gradient-to-r from-emerald-600 to-teal-500'
-                                  : 'bg-gradient-to-r from-indigo-600 to-violet-500'
-                              }`}
-                              style={{ width: `${del.progress}%` }}
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow">
-                              {del.progress}%
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="w-full h-1 bg-slate-800/40 rounded" />
-                        )}
-                      </div>
-                    );
-                  })}
+                  {/* Barra Única do Gantt com Span */}
+                  <div
+                    className="h-6 flex items-center justify-center bg-slate-800 rounded-md overflow-hidden p-0.5 relative group"
+                    style={{ gridColumn: `span ${span} / span ${span}` }}
+                  >
+                    <div
+                      className={`absolute left-0 top-0.5 bottom-0.5 rounded transition-all duration-300 ${
+                        del.progress === 100
+                          ? 'bg-gradient-to-r from-emerald-600 to-teal-500'
+                          : 'bg-gradient-to-r from-indigo-600 to-violet-500'
+                      }`}
+                      style={{ width: `${del.progress}%` }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow">
+                      {del.progress}%
+                    </div>
+                  </div>
+
+                  {/* Células vazias depois da barra */}
+                  {Array.from({ length: 6 - (colStart - 1 + span) }).map((_, i) => (
+                    <div key={`after-${i}`} className="w-full h-1 bg-slate-800/40 rounded" />
+                  ))}
                 </div>
               </div>
             );

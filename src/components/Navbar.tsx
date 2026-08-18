@@ -14,13 +14,11 @@ import {
   Settings
 } from 'lucide-react';
 import { Project } from '../types';
+import { useProjectStore } from '../store/ProjectContext';
 
 interface NavbarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  projects: Project[];
-  activeProjectId: string;
-  onSelectProject: (id: string) => void;
   onOpenNewProjectModal: () => void;
   onOpenEditProjectModal?: () => void;
 }
@@ -28,13 +26,13 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
-  projects,
-  activeProjectId,
-  onSelectProject,
   onOpenNewProjectModal,
   onOpenEditProjectModal,
 }) => {
-  const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
+  const { projects, activeProjectId, activeProject, setActiveProjectId } = useProjectStore();
+  
+  if (!activeProject) return null; // Fallback se ainda não carregou
+
 
   const tabs = [
     { id: 'portfolio', label: 'Portfólio de Projetos', icon: FolderKanban },
@@ -118,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             <button
                               key={p.id}
                               onClick={() => {
-                                onSelectProject(p.id);
+                                setActiveProjectId(p.id);
                                 setIsDropdownOpen(false);
                                 setSearchTerm('');
                               }}

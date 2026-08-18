@@ -82,6 +82,13 @@ export interface DiscussionMessage {
   avatarColor: string;
 }
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  isActive?: boolean;
+}
+
 export interface Project {
   id: string;
   code: string; // Ex: PROJ-001, PROJ-002
@@ -94,5 +101,6 @@ export interface Project {
   timesheet: TimesheetEntry[];
   files: ProjectFile[];
   discussions: DiscussionMessage[];
+  teamMembers?: TeamMember[];
   status?: 'Aguardando' | 'Iniciado';
 }

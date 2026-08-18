@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Project } from '../types';
+import { useProjectStore } from '../store/ProjectContext';
+import { usePortfolioMetrics } from '../hooks/usePortfolioMetrics';
 import { 
   FolderKanban, 
   DollarSign, 
@@ -16,47 +18,27 @@ import {
 } from 'lucide-react';
 
 interface PortfolioDashboardViewProps {
-  projects: Project[];
-  onSelectProject: (projectId: string) => void;
-  onDeleteProject: (projectId: string) => void;
   onOpenNewProjectModal: () => void;
   setActiveTab: (tab: string) => void;
-  onUpdateProject?: (project: Project) => void;
 }
 
 export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
-  projects,
-  onSelectProject,
-  onDeleteProject,
   onOpenNewProjectModal,
   setActiveTab,
-  onUpdateProject,
 }) => {
+  const { projects, setActiveProjectId, deleteProject, updateProject } = useProjectStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [maxBudget, setMaxBudget] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'Todos' | 'Aguardando' | 'Iniciado'>('Todos');
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
-  // Combined Portfolio Metrics
-  const totalProjects = projects.length;
-  const totalPortfolioBudget = projects.reduce((acc, curr) => acc + curr.budget, 0);
-
-  // Realized investment across portfolio
-  const totalRealizedBudget = projects.reduce((acc, curr) => {
-    const projSpent = curr.canvasData.planoAcao.reduce((a, c) => a + c.investment * (c.progress / 100), 0);
-    return acc + projSpent;
-  }, 0);
-
-  const averageProgress = Math.round(
-    projects.reduce((acc, curr) => {
-      const pAvg = curr.canvasData.planoAcao.reduce((a, c) => a + c.progress, 0) / (curr.canvasData.planoAcao.length || 1);
-      return acc + pAvg;
-    }, 0) / (totalProjects || 1)
-  );
-
-  const totalHoursLogged = projects.reduce((acc, curr) => {
-    return acc + curr.timesheet.reduce((a, c) => a + c.hours, 0);
-  }, 0);
+  const { 
+    totalProjects, 
+    totalPortfolioBudget, 
+    totalRealizedBudget, 
+    averageProgress, 
+    totalHoursLogged 
+  } = usePortfolioMetrics(projects);
 
   const filteredProjects = projects.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,7 +55,7 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
 
   const confirmDelete = () => {
     if (projectToDelete) {
-      onDeleteProject(projectToDelete.id);
+      deleteProject(projectToDelete.id);
       setProjectToDelete(null);
     }
   };
@@ -328,11 +310,11 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
 
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-2">
-                    {onUpdateProject && (
+                    {updateProject && (
                       <button
                         onClick={() => {
                           const newStatus = (project.status || 'Aguardando') === 'Aguardando' ? 'Iniciado' : 'Aguardando';
-                          onUpdateProject({ ...project, status: newStatus });
+                          updateProject({ ...project, status: newStatus });
                         }}
                         className={`w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer border ${
                           (project.status || 'Aguardando') === 'Aguardando'
@@ -353,7 +335,7 @@ export const PortfolioDashboardView: React.FC<PortfolioDashboardViewProps> = ({
                     )}
                     <button
                       onClick={() => {
-                        onSelectProject(project.id);
+                        setActiveProjectId(project.id);
                         setActiveTab('canvas');
                       }}
                       className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer border border-indigo-500/30"

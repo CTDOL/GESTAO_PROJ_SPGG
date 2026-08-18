@@ -1,28 +1,52 @@
 import React, { useState } from 'react';
-import { TimesheetEntry, DeliveryItem } from '../types';
+import { TimesheetEntry } from '../types';
+import { useProjectStore } from '../store/ProjectContext';
+import { useTimesheetMetrics } from '../hooks/useTimesheetMetrics';
 import { Clock, Plus, Calendar, User, FileText, CheckCircle2, TrendingUp } from 'lucide-react';
 
-interface TimesheetViewProps {
-  timesheet: TimesheetEntry[];
-  setTimesheet: React.Dispatch<React.SetStateAction<TimesheetEntry[]>>;
-  deliveries: DeliveryItem[];
-}
-
-export const TimesheetView: React.FC<TimesheetViewProps> = ({ timesheet, setTimesheet, deliveries }) => {
+export const TimesheetView: React.FC = () => {
+  const { activeProject, setTimesheet, setTeamMembers } = useProjectStore();
+  
+  if (!activeProject) return null;
+  
+  const timesheet = activeProject.timesheet;
+  const deliveries = activeProject.canvasData.planoAcao;
   const [date, setDate] = useState('2026-08-04');
-  const [member, setMember] = useState('Lucas Mendes');
-  const [role, setRole] = useState('Dev Frontend');
-  const [deliveryId, setDeliveryId] = useState('del-3');
+  const [member, setMember] = useState('');
+  const [role, setRole] = useState('');
+  const [deliveryId, setDeliveryId] = useState('');
   const [hours, setHours] = useState<number>(8);
   const [description, setDescription] = useState('');
+  
+  // Estados para adicionar novo membro
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState('');
 
-  const teamMembers = [
-    { name: 'Marcos Silva', role: 'Líder Técnico' },
-    { name: 'Lucas Mendes', role: 'Dev Frontend' },
-    { name: 'Rodrigo Xavier', role: 'Dev Backend' },
-    { name: 'Juliana Lima', role: 'Designer UX/UI' },
-    { name: 'Ana Costa', role: 'Analista de QA' },
+  const defaultTeamMembers = [
+    { id: '1', name: 'Marcos Silva', role: 'Líder Técnico', isActive: true },
+    { id: '2', name: 'Lucas Mendes', role: 'Dev Frontend', isActive: true },
+    { id: '3', name: 'Rodrigo Xavier', role: 'Dev Backend', isActive: true },
+    { id: '4', name: 'Juliana Lima', role: 'Designer UX/UI', isActive: true },
+    { id: '5', name: 'Ana Costa', role: 'Analista de QA', isActive: true },
   ];
+
+  const teamMembers = activeProject.teamMembers && activeProject.teamMembers.length > 0 
+    ? activeProject.teamMembers 
+    : defaultTeamMembers;
+
+  const activeMembersList = teamMembers.filter(m => m.isActive !== false);
+
+  // Set default form values safely
+  React.useEffect(() => {
+    if (activeMembersList.length > 0 && !activeMembersList.find(m => m.name === member)) {
+      setMember(activeMembersList[0].name);
+      setRole(activeMembersList[0].role);
+    }
+    if (deliveries.length > 0 && !deliveryId) {
+      setDeliveryId(deliveries[0].id);
+    }
+  }, [activeMembersList, deliveries, member, deliveryId]);
 
   const handleAddTimesheet = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,18 +65,37 @@ export const TimesheetView: React.FC<TimesheetViewProps> = ({ timesheet, setTime
       description
     };
 
-    setTimesheet(prev => [newEntry, ...prev]);
+    setTimesheet((prev: TimesheetEntry[]) => [newEntry, ...prev]);
     setDescription('');
     setHours(8);
   };
 
-  const totalHoursLogged = timesheet.reduce((acc, curr) => acc + curr.hours, 0);
+  const handleAddNewMember = () => {
+    if (!newMemberName.trim() || !newMemberRole.trim()) return;
+    const novo = { id: `mem-${Date.now()}`, name: newMemberName, role: newMemberRole, isActive: true };
+    if (setTeamMembers) {
+      setTeamMembers(prev => {
+        const currentList = prev.length > 0 ? prev : defaultTeamMembers;
+        return [...currentList, novo];
+      });
+    }
+    setMember(novo.name);
+    setRole(novo.role);
+    setIsAddingMember(false);
+    setNewMemberName('');
+    setNewMemberRole('');
+  };
 
-  // Group hours by member
-  const memberHours = teamMembers.map(m => {
-    const total = timesheet.filter(t => t.member === m.name).reduce((acc, curr) => acc + curr.hours, 0);
-    return { ...m, hours: total };
-  });
+  const handleToggleMemberActive = (memberId: string) => {
+    if (setTeamMembers) {
+      setTeamMembers(prev => {
+        const currentList = prev.length > 0 ? prev : defaultTeamMembers;
+        return currentList.map(m => m.id === memberId ? { ...m, isActive: m.isActive === false ? true : false } : m);
+      });
+    }
+  };
+
+  const { totalHoursLogged, memberHours } = useTimesheetMetrics(timesheet, teamMembers);
 
   return (
     <div className="space-y-6 pb-12">
@@ -94,6 +137,7 @@ export const TimesheetView: React.FC<TimesheetViewProps> = ({ timesheet, setTime
               <label className="block text-xs font-semibold text-slate-300 mb-1">Data</label>
               <input
                 type="date"
+                required
                 value={date}
                 onChange={e => setDate(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
@@ -101,20 +145,56 @@ export const TimesheetView: React.FC<TimesheetViewProps> = ({ timesheet, setTime
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Integrante da Equipe</label>
-              <select
-                value={member}
-                onChange={e => {
-                  const m = teamMembers.find(item => item.name === e.target.value);
-                  setMember(e.target.value);
-                  if (m) setRole(m.role);
-                }}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
-              >
-                {teamMembers.map(m => (
-                  <option key={m.name} value={m.name}>{m.name} ({m.role})</option>
-                ))}
-              </select>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-semibold text-slate-300">Integrante da Equipe</label>
+                <button 
+                  type="button" 
+                  onClick={() => setIsAddingMember(!isAddingMember)} 
+                  className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300"
+                >
+                  {isAddingMember ? 'Cancelar' : '+ Novo Membro'}
+                </button>
+              </div>
+              
+              {isAddingMember ? (
+                <div className="space-y-2 p-3 bg-slate-900 border border-indigo-500/30 rounded-xl">
+                  <input
+                    type="text"
+                    placeholder="Nome do integrante"
+                    value={newMemberName}
+                    onChange={e => setNewMemberName(e.target.value)}
+                    className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cargo (ex: Analista de BI)"
+                    value={newMemberRole}
+                    onChange={e => setNewMemberRole(e.target.value)}
+                    className="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddNewMember}
+                    className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition"
+                  >
+                    Adicionar ao Projeto
+                  </button>
+                </div>
+              ) : (
+                <select
+                  value={member}
+                  onChange={e => {
+                    const m = teamMembers.find(item => item.name === e.target.value);
+                    setMember(e.target.value);
+                    if (m) setRole(m.role);
+                  }}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
+                >
+                  {activeMembersList.map(m => (
+                    <option key={m.name} value={m.name}>{m.name} ({m.role})</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div>
@@ -176,10 +256,22 @@ export const TimesheetView: React.FC<TimesheetViewProps> = ({ timesheet, setTime
 
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
               {memberHours.map(m => (
-                <div key={m.name} className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-                  <div className="text-[11px] font-bold text-slate-100 truncate">{m.name}</div>
+                <div key={m.name} className={`p-3 rounded-xl bg-slate-900 border ${m.isActive === false ? 'border-slate-800/50 opacity-60' : 'border-slate-800'} space-y-1 relative group`}>
+                  <button 
+                    onClick={() => handleToggleMemberActive(m.id)}
+                    className="absolute top-2 right-2 p-1.5 bg-slate-950/80 rounded border border-slate-700/50 text-slate-400 hover:text-red-400 hover:bg-slate-800 transition"
+                    title={m.isActive === false ? "Reativar Membro" : "Desativar Membro"}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      {m.isActive === false 
+                        ? <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM15 9l-6 6M9 9l6 6"/> 
+                        : <path d="M18 6L6 18M6 6l12 12"/>
+                      }
+                    </svg>
+                  </button>
+                  <div className={`text-[11px] font-bold truncate pr-4 ${m.isActive === false ? 'text-slate-400 line-through' : 'text-slate-100'}`}>{m.name}</div>
                   <div className="text-[10px] text-slate-400">{m.role}</div>
-                  <div className="text-sm font-extrabold text-amber-400 pt-1">{m.hours}h acumuladas</div>
+                  <div className={`text-sm font-extrabold pt-1 ${m.isActive === false ? 'text-slate-500' : 'text-amber-400'}`}>{m.hours}h acumuladas</div>
                 </div>
               ))}
             </div>
@@ -201,6 +293,7 @@ export const TimesheetView: React.FC<TimesheetViewProps> = ({ timesheet, setTime
                     <th className="py-2.5 px-3">Entrega</th>
                     <th className="py-2.5 px-3">Horas</th>
                     <th className="py-2.5 px-3">Descrição</th>
+                    <th className="py-2.5 px-3 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
@@ -214,6 +307,19 @@ export const TimesheetView: React.FC<TimesheetViewProps> = ({ timesheet, setTime
                       <td className="py-3 px-3 text-slate-300 max-w-xs truncate">{entry.deliveryName}</td>
                       <td className="py-3 px-3 font-extrabold text-amber-400">{entry.hours}h</td>
                       <td className="py-3 px-3 text-slate-400">{entry.description}</td>
+                      <td className="py-3 px-3 text-right">
+                        <button
+                          onClick={() => setTimesheet((prev: TimesheetEntry[]) => prev.filter(t => t.id !== entry.id))}
+                          className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                          title="Excluir apontamento"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
