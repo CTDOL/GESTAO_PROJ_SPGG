@@ -1,1 +1,208 @@
-[]
+[
+  {
+    "id": "proj-aq-capacetes-01",
+    "code": "AQU-001",
+    "name": "Aquisição de Capacetes Balísticos",
+    "description": "Projeto para aquisição de capacetes balísticos (Nível IIIA) para o efetivo policial ativo.",
+    "budget": 1500000,
+    "durationMonths": 8,
+    "canvasData": {
+      "nomeProjeto": "Aquisição de Capacetes Balísticos",
+      "codigoProjeto": "AQU-001",
+      "proposito": [
+        {
+          "id": "prop-1",
+          "title": "Objetivo Estratégico",
+          "description": "Garantir a integridade física do efetivo policial.",
+          "tag": "Segurança"
+        }
+      ],
+      "objetivo": [
+        {
+          "id": "obj-1",
+          "title": "Meta",
+          "description": "Adquirir e distribuir 1.000 capacetes balísticos Nível IIIA em 8 meses.",
+          "tag": "Entregável"
+        }
+      ],
+      "justificativa": [
+        {
+          "id": "just-1",
+          "title": "Problema a Resolver",
+          "description": "Equipamentos atuais defasados ou ausentes, gerando risco de morte em operações.",
+          "tag": "Risco de Vida"
+        }
+      ],
+      "produto": [
+        {
+          "id": "prod-1",
+          "title": "Produto",
+          "description": "Capacetes Balísticos Nível IIIA com certificação NIJ.",
+          "tag": "Equipamento"
+        }
+      ],
+      "stakeholders": [
+        {
+          "id": "stk-1",
+          "title": "Patrocinador",
+          "description": "Secretaria de Segurança Pública",
+          "tag": "Governo"
+        },
+        {
+          "id": "stk-2",
+          "title": "Usuários",
+          "description": "Efetivo de rua e batalhões especiais",
+          "tag": "Polícia"
+        }
+      ],
+      "resistentes": [],
+      "premissas": [
+        {
+          "id": "prem-1",
+          "title": "Premissas",
+          "description": "Orçamento aprovado na LOA.",
+          "tag": "Financeiro"
+        }
+      ],
+      "restricoes": [
+        {
+          "id": "rest-1",
+          "title": "Teto e Licitação",
+          "description": "Limites da lei de licitações e prazos legais.",
+          "tag": "Legal"
+        }
+      ],
+      "riscos": [
+        {
+          "id": "risc-1",
+          "title": "Riscos",
+          "description": "Atraso no processo licitatório por recursos de concorrentes.",
+          "tag": "Alto Impacto"
+        }
+      ],
+      "escopo": [
+        {
+          "id": "esc-1",
+          "title": "Escopo",
+          "description": "Compra, recebimento, teste balístico por amostragem e distribuição.",
+          "tag": "Escopo"
+        }
+      ],
+      "naoEscopo": [
+        {
+          "id": "nesc-1",
+          "title": "Não Escopo",
+          "description": "Manutenção a longo prazo após garantia.",
+          "tag": "Exclusão"
+        }
+      ],
+      "beneficios": [
+        {
+          "id": "ben-1",
+          "title": "Benefícios",
+          "description": "Redução da letalidade policial e melhoria nas condições de trabalho.",
+          "tag": "Ganho"
+        }
+      ],
+      "planoAcao": [
+        {
+          "id": "del-1",
+          "order": 1,
+          "name": "Elaboração do Termo de Referência",
+          "month": "Mês 1",
+          "monthNumber": 1,
+          "investment": 0,
+          "completed": false,
+          "progress": 50,
+          "status": "Em Andamento"
+        },
+        {
+          "id": "del-2",
+          "order": 2,
+          "name": "Processo Licitatório",
+          "month": "Mês 3",
+          "monthNumber": 3,
+          "investment": 0,
+          "completed": false,
+          "progress": 0,
+          "status": "Planejado"
+        },
+        {
+          "id": "del-3",
+          "order": 3,
+          "name": "Assinatura e Empenho",
+          "month": "Mês 5",
+          "monthNumber": 5,
+          "investment": 1500000,
+          "completed": false,
+          "progress": 0,
+          "status": "Planejado"
+        },
+        {
+          "id": "del-4",
+          "order": 4,
+          "name": "Entrega e Testes",
+          "month": "Mês 7",
+          "monthNumber": 7,
+          "investment": 0,
+          "completed": false,
+          "progress": 0,
+          "status": "Planejado"
+        },
+        {
+          "id": "del-5",
+          "order": 5,
+          "name": "Distribuição",
+          "month": "Mês 8",
+          "monthNumber": 8,
+          "investment": 0,
+          "completed": false,
+          "progress": 0,
+          "status": "Planejado"
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "id": "tsk-1",
+        "title": "Redigir especificações técnicas",
+        "description": "Pesquisar normas NIJ e redigir as especificações para o TR.",
+        "status": "in_progress",
+        "priority": "alta",
+        "assignee": "Capitão Silva",
+        "assigneeRole": "Oficial de Logística",
+        "deliveryId": "del-1",
+        "dueDate": "2026-09-01",
+        "hoursSpent": 8,
+        "estimatedHours": 20
+      }
+    ],
+    "timesheet": [],
+    "files": [],
+    "discussions": [
+      {
+        "id": "disc-1",
+        "author": "Sistema",
+        "role": "Notificação",
+        "text": "Projeto [AQU-001] Aquisição de Capacetes Balísticos cadastrado com sucesso.",
+        "timestamp": "2026-08-18 12:20",
+        "avatarColor": "bg-blue-600"
+      }
+    ],
+    "status": "Iniciado",
+    "teamMembers": [
+      {
+        "id": "1",
+        "name": "Capitão Silva",
+        "role": "Oficial de Logística",
+        "isActive": true
+      },
+      {
+        "id": "2",
+        "name": "Major Ribeiro",
+        "role": "Gestor de Contrato",
+        "isActive": true
+      }
+    ]
+  }
+]
