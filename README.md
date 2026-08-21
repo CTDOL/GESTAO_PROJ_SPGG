@@ -18,7 +18,7 @@
 
 <br />
 
-O **ProjTrack** é uma solução completa em modelo PWA (Progressive Web App) criada para gerenciar projetos do início ao fim, baseada nas melhores práticas do PMBOK. Conta com uma arquitetura inovadora de "Flat-file" para persistência de dados (sem complexidades de banco de dados tradicionais), focada em extrema velocidade, segurança e design premium.
+O **ProjTrack** é uma solução completa criada para gerenciar projetos do início ao fim, baseada nas melhores práticas do PMBOK. A persistência de dados roda sobre **SQLite** via uma micro-API em PHP, focada em extrema velocidade, segurança e design premium.
 
 ---
 
@@ -30,18 +30,18 @@ O **ProjTrack** é uma solução completa em modelo PWA (Progressive Web App) cr
 - 🕒 **Timesheet & Gantt:** Acompanhamento preciso das horas da equipe de TI e cronograma visual de entregas.
 - 📁 **Arquivos e Discussões:** Simulação de repositório de artefatos com controle de logs e aprovações.
 - 📱 **PWA Nativo:** Instale o sistema como um app nativo no Desktop ou Celular diretamente pelo navegador.
-- 💾 **Persistência Inteligente:** Salvamento ultra-rápido via API PHP local, com fallback automático para LocalStorage.
+- 💾 **Persistência Inteligente:** Salvamento transacional via API PHP + SQLite, com fallback automático para LocalStorage.
 
 ---
 
 ## 🛠️ Arquitetura e Tecnologias
 
-A aplicação possui um Frontend reativo de ponta com um Backend invisível, operando no modelo *Flat-file Database*.
+A aplicação possui um Frontend reativo de ponta com um Backend invisível, persistindo os dados em **SQLite**.
 
-- **Frontend:** React 19, TypeScript, Tailwind CSS, Vite. Ícones gerenciados via `lucide-react`.
-- **Backend:** Micro-API nativa em `PHP` (`public/api.php`) que lê/escreve as informações na própria raiz do sistema (`database.json`).
+- **Frontend:** React 19, TypeScript, Tailwind CSS, Vite. Ícones gerenciados via `lucide-react`. A camada de I/O fica isolada em `src/services/persistence/` (adapters) e `src/hooks/usePersistedProjects.ts`, separada da lógica de domínio em `src/store/ProjectContext.tsx`.
+- **Backend:** Micro-API nativa em `PHP` (`public/api.php`) que lê/escreve em `public/database.sqlite` via PDO, dentro de transações. O esquema está em `public/schema.sql`.
 - **Infraestrutura:** Hospedagem em VPS/cPanel com Apache/Nginx e SPA Fallback routing.
-- **Integração (CI/CD):** Deploy 100% automatizado via **GitHub Actions** (Workflow FTP ativado ao atualizar a branch `main`).
+- **Integração (CI/CD):** Deploy 100% automatizado via **GitHub Actions** (Workflow FTP ativado ao atualizar a branch `main`). O banco de dados (`database.sqlite`, `database.json`) nunca é versionado nem sobrescrito pelo deploy — veja `.gitignore` e o `exclude` do workflow.
 
 ---
 
@@ -59,13 +59,22 @@ cd GESTAO_PROJ_SPGG
 ```bash
 npm install
 ```
+Requer também PHP local com a extensão `pdo_sqlite` (via Homebrew: `brew install php`).
 
-### 3. Rodar o servidor de desenvolvimento
+### 3. Rodar o backend local (PHP + SQLite)
+```bash
+php -S localhost:8080 -t public
+```
+Na primeira execução, `public/api.php` cria `public/database.sqlite` automaticamente a partir de `public/schema.sql`. Se você já tem dados em `public/database.json` (formato antigo) e quer preservá-los, rode antes:
+```bash
+php public/migrate.php
+```
+
+### 4. Rodar o servidor de desenvolvimento (em outro terminal)
 ```bash
 npm run dev
 ```
-
-> **Aviso de Ambiente de Dev:** Ao rodar via Vite localmente (`npm run dev`), o ambiente usará a memória `localStorage` do seu navegador como banco de dados secundário seguro, já que o Vite não interpreta PHP localmente. 
+O Vite faz proxy de `/api.php` para `localhost:8080` (ver `vite.config.ts`). Se o backend PHP não estiver rodando, o app cai automaticamente no fallback via `localStorage`.
 
 ---
 

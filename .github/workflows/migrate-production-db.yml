@@ -1,0 +1,68 @@
+name: Migrar banco de produção (JSON → SQLite)
+
+# Workflow manual, uso único (ou pontual): NÃO roda em push. Use a aba
+# "Actions" do GitHub → "Migrar banco de produção" → "Run workflow".
+#
+# Pré-requisito: a versão do código já com public/api.php, public/db_lib.php,
+# public/schema.sql e public/migrate.php precisa já estar no servidor
+# (ou seja, rode este workflow DEPOIS de um deploy normal via push em main).
+#
+# Segurança: só avança se o database.sqlite do servidor estiver vazio (0
+# projetos) — ou seja, é seguro rodar mesmo que o novo api.php já tenha
+# criado um database.sqlite vazio sozinho ao ser acessado antes da migração.
+# Se já existir dado real no SQLite (edições feitas em produção), o
+# workflow para e exige "force=true" para sobrescrever.
+#
+# Secrets necessários (Settings → Secrets and variables → Actions):
+#   SSH_HOST         host da VPS
+#   SSH_USERNAME      usuário SSH
+#   SSH_PASSWORD      senha SSH (ou troque por SSH_KEY, ver comentário abaixo)
+#   SSH_PORT          porta SSH (geralmente 22)
+#   PROD_APP_PATH     caminho absoluto na VPS onde o site fica (ex: /home/usuario/public_html)
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Forçar re-migração mesmo se já houver dados no database.sqlite (sobrescreve com o conteúdo de database.json)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🗄️ Rodar migração via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          # Se preferir autenticação por chave, troque a linha acima por:
+          #   key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+            cd "${{ secrets.PROD_APP_PATH }}"
+
+            if [ ! -f database.json ]; then
+              echo "database.json não encontrado em ${{ secrets.PROD_APP_PATH }} — abortando."
+              exit 1
+            fi
+
+            EXISTING_COUNT="0"
+            if [ -f database.sqlite ]; then
+              EXISTING_COUNT=$(sqlite3 database.sqlite "SELECT COUNT(*) FROM projects;" 2>/dev/null || echo 0)
+            fi
+
+            if [ "$EXISTING_COUNT" != "0" ] && [ "${{ github.event.inputs.force }}" != "true" ]; then
+              echo "database.sqlite já contém $EXISTING_COUNT projeto(s) de produção."
+              echo "Rode este workflow de novo com force=true se realmente quiser sobrescrever com o conteúdo de database.json."
+              exit 1
+            fi
+
+            php migrate.php

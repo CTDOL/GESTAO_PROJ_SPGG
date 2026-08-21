@@ -36,3 +36,9 @@ jobs:
           local-dir: ./dist/
           # O diretório no servidor já aponta para a raiz correta.
           server-dir: /
+          # Nunca sobrescreve o banco de dados de produção com o snapshot do build.
+          exclude: |
+            **/database.sqlite
+            **/database.sqlite-journal
+            **/database.json
+            **/database.json.bak

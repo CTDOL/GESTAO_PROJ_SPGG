@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { Project, PMBOKCanvasData, Task, DeliveryItem, TimesheetEntry, ProjectFile, DiscussionMessage, TeamMember } from '../types';
-import { storageService } from '../services/storageService';
+import { usePersistedProjects } from '../hooks/usePersistedProjects';
+import { ApiPersistenceAdapter } from '../services/persistence/ApiPersistenceAdapter';
+import { LocalStoragePersistenceAdapter } from '../services/persistence/LocalStoragePersistenceAdapter';
 import { initialPMBOKData, initialTasks, initialTimesheet, initialFiles, initialDiscussions } from '../data/initialData';
 
 interface ProjectContextType {
@@ -68,62 +70,21 @@ const generateTestProjects = () => Array.from({ length: 50 }).map((_, i) => {
   };
 });
 
+// Adapters são singletons de módulo: precisam de identidade estável entre
+// renders para não disparar os efeitos de load/save do hook repetidamente.
+const remoteAdapter = new ApiPersistenceAdapter();
+const localAdapter = new LocalStoragePersistenceAdapter();
+
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+  const { projects, setProjects, isLoading } = usePersistedProjects(remoteAdapter, localAdapter);
+  const [activeProjectId, setActiveProjectId] = React.useState<string>('');
 
-  // Inicialização (Load)
+  // Define o projeto ativo assim que a carga inicial termina
   useEffect(() => {
-    const initializeData = async () => {
-      setIsLoading(true);
-      
-      const apiData = await storageService.loadFromApi();
-      if (apiData) {
-        setProjects(apiData);
-        setActiveProjectId(apiData[0].id);
-      } else {
-        const localData = storageService.loadFromLocal();
-        if (localData) {
-          setProjects(localData);
-          setActiveProjectId(localData[0].id);
-        } else {
-          // Empty State
-          setProjects([]);
-          setActiveProjectId('');
-        }
-      }
-
-      setIsDataLoaded(true);
-      setIsLoading(false);
-    };
-
-    initializeData();
-  }, []);
-
-  // Listener para conflitos de concorrência
-  useEffect(() => {
-    const handleConflict = () => {
-      alert("Alerta: Os dados foram modificados por outro usuário em outra sessão.\nA tela será recarregada para garantir que você não perca ou sobrescreva informações importantes.");
-      window.location.reload();
-    };
-
-    window.addEventListener('sync-conflict', handleConflict);
-    return () => window.removeEventListener('sync-conflict', handleConflict);
-  }, []);
-
-  // Sincronização (Save) com Debounce
-  useEffect(() => {
-    if (isLoading || !isDataLoaded) return;
-    
-    const saveTimer = setTimeout(() => {
-      storageService.saveToLocal(projects);
-      storageService.syncToApi(projects);
-    }, 1000);
-
-    return () => clearTimeout(saveTimer);
-  }, [projects, isLoading, isDataLoaded]);
+    if (!isLoading && !activeProjectId && projects.length > 0) {
+      setActiveProjectId(projects[0].id);
+    }
+  }, [isLoading, projects, activeProjectId]);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || (projects.length > 0 ? projects[0] : null);
 
